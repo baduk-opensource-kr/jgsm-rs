@@ -12,7 +12,6 @@ KB囲碁リーグなどのチームゲームで勝敗を予測し、最善のオ
 リンクをクリックして、実行ファイルをダウンロードすれば使用できます。
 
 # ソースコードをビルドして実行する（開発者）
-Install dependencies
 ```
 git clone https://github.com/baduk-opensource-kr/jgsm-rs.git
 cd jgsm-rs

@@ -200,7 +200,7 @@ fn main() {
         loop {
             println!("\n{} 팀의 스쿼드:", selected_team.team_name);
             for (index, player) in selected_team.players.iter().enumerate() {
-                println!("{}. {} (elo: {})", index + 1, player.korean_name, player.elo_rating);
+                println!("{}. {} (elo: {:.2})", index + 1, player.korean_name, player.elo_rating);
             }
             let mut input = String::new();
             print!("\n제외할 기사를 선택하세요 (완료시 엔터): ");
@@ -230,7 +230,7 @@ fn main() {
         println!("\n{} 팀의 기사에 대한 컨디션 가중치를 입력하세요.", selected_team.team_name);
         loop {
             for (index, player) in selected_team.players.iter().enumerate() {
-                println!("{}. {} (elo: {})\n    컨디션 가중치: {}", index + 1, player.korean_name, player.elo_rating, player.condition_weight);
+                println!("{}. {} (elo: {:.2})\n    컨디션 가중치: {:.2}", index + 1, player.korean_name, player.elo_rating, player.condition_weight);
             }
             println!("컨디션 가중치를 입력할 기사를 선택하세요 (완료시 엔터): ");
             let mut input = String::new();
@@ -257,7 +257,7 @@ fn main() {
         println!("\n{} 팀의 기사에 대한 게임속도 가중치를 입력하세요.", selected_team.team_name);
         loop {
             for (index, player) in selected_team.players.iter().enumerate() {
-                println!("{}. {} (elo: {})\n    장고(Rapid) 가중치: {}\n    속기(Blitz) 가중치: {}\n    초속기(Bullet) 가중치: {}", index + 1, player.korean_name, player.elo_rating, player.rapid_weight, player.blitz_weight, player.bullet_weight);
+                println!("{}. {} (elo: {:.2})\n    장고(Rapid) 가중치: {:.2}\n    속기(Blitz) 가중치: {:.2}\n    초속기(Bullet) 가중치: {:.2}", index + 1, player.korean_name, player.elo_rating, player.rapid_weight, player.blitz_weight, player.bullet_weight);
             }
             println!("게임속도 가중치를 입력할 기사를 선택하세요 (완료시 엔터): ");
             let mut input = String::new();
@@ -300,7 +300,7 @@ fn main() {
     for team in selected_teams.iter() {
         println!("\n{}:", team.team_name);
         for player in &team.players {
-            println!("{} (elo: {}, 컨디션: {}, 장고: {}, 속기: {}, 초속기: {})", player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
+            println!("{} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
         }
     }
 
@@ -385,13 +385,13 @@ fn main() {
                     "1" => {
                         println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name);
                         for player in &selected_teams[0].players {
-                            println!("{} (elo: {}, 컨디션: {}, 장고: {}, 속기: {}, 초속기: {})", player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
+                            println!("{} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
                         }
                     },
                     "2" => {
                         println!("\n{} 팀의 스쿼드:", selected_teams[1].team_name);
                         for player in &selected_teams[1].players {
-                            println!("{} (elo: {}, 컨디션: {}, 장고: {}, 속기: {}, 초속기: {})", player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
+                            println!("{} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
                         }
                     },
                     "3" => {
@@ -404,7 +404,7 @@ fn main() {
                         let mut team1_combination: Vec<&Player> = Vec::new();
                         println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name);
                         for (index, player) in selected_teams[0].players.iter().enumerate() {
-                            println!("{}. {} (elo: {}, 컨디션: {}, 장고: {}, 속기: {}, 초속기: {})", index + 1, player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
+                            println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
                         }
                         for i in 0..4 {
                             loop {
@@ -430,7 +430,7 @@ fn main() {
                         let mut team2_combination: Vec<&Player> = Vec::new();
                         println!("\n{} 팀의 스쿼드:", selected_teams[1].team_name);
                         for (index, player) in selected_teams[1].players.iter().enumerate() {
-                            println!("{}. {} (elo: {}, 컨디션: {}, 장고: {}, 속기: {}, 초속기: {})", index + 1, player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
+                            println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
                         }
                         for i in 0..4 {
                             loop {
@@ -833,7 +833,7 @@ fn main() {
                         println!("\n{} 팀의 스쿼드:", selected_teams[1].team_name);
                         let mut last_index = 0;
                         for (index, player) in selected_teams[1].players.iter().enumerate() {
-                            println!("{}. {} (elo: {}, 컨디션: {}, 장고: {}, 속기: {}, 초속기: {})", index + 1, player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
+                            println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name, player.elo_rating, player.elo_rating + player.condition_weight, player.elo_rating + player.rapid_weight, player.elo_rating + player.blitz_weight, player.elo_rating + player.bullet_weight);
                             last_index = index;
                         }
                         println!("{}. 알 수 없음", last_index + 2);
@@ -1090,7 +1090,7 @@ fn fetch_player_ratings_on_baeteil() -> Result<HashMap<String, f64>, Box<dyn std
                 let name = name_element.inner_html();
                 let rating_str = rating_element.inner_html().chars().filter(|c| c.is_digit(10)).collect::<String>();
                 if let Ok(rating) = rating_str.parse::<f64>() {
-                    ratings.insert(name, rating / 2.0);
+                    ratings.insert(name, rating / 1.3);
                 }
             }
         }

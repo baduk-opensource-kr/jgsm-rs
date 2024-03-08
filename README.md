@@ -5,7 +5,7 @@ Joint Go Strategy Matrix(공동의 바둑 전략 메트릭스) - JGSM: 전기새
 바둑리그등의 팀 게임에서 승부를 예측하고 최선의 오더를 산출하는 메트릭스를 출력합니다.
 
 ## 다른 언어로 보기
-[**한국어**](./README.md), [日本語](./README.jp.md)
+[**한국어**](./README.md), [日本語](./README.jp.md), [English](./README.en.md)
 
 # 릴리즈 실행하기(일반 사용자)
 [release](https://github.com/baduk-opensource-kr/jgsm-rs/releases/tag/release).

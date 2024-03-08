@@ -5,7 +5,7 @@ Joint Go Strategy Matrix(共同の囲碁戦略マトリックス) - JGSM: 田忌
 KB囲碁リーグなどのチームゲームで勝敗を予測し、最善のオーダーを算出するマトリックスを出力します。
 
 ## 他の言語で見る
-[한국어](./README.md), [**日本語**](./README.ja.md)
+[한국어](./README.md), [**日本語**](./README.ja.md), [English](./README.en.md)
 
 # リリースを実行する（一般ユーザー向け）
 [release](https://github.com/baduk-opensource-kr/jgsm-rs/releases/tag/release).

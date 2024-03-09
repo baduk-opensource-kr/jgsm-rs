@@ -1,13 +1,14 @@
+use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team};
 use chrono::Datelike;
 use itertools::Itertools;
 use reqwest;
 use scraper::{Html, Selector};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
+use std::io;
 use xlsxwriter::format::FormatColor;
-use xlsxwriter::Format;
 use xlsxwriter::prelude::Workbook;
-use crate::models::{Team, PlayerRelativity, Lineup, MatchResult};
+use xlsxwriter::Format;
 
 pub fn calculate_win_probability(player1_elo: f64, player2_elo: f64) -> f64 {
     let elo_diff = player2_elo - player1_elo;
@@ -467,4 +468,33 @@ pub fn create_custom_format(win_probability: f64, maximum: f64) -> Result<Format
     format.set_num_format("0.00%").set_bg_color(custom_color);
 
     Ok(format)
+}
+
+pub fn select_team_combination(team: &Team) -> Vec<&Player> {
+    let mut team_combination: Vec<&Player> = Vec::new();
+    println!("\n{} 팀의 스쿼드:", team.team_name());
+    for (index, player) in team.players().iter().enumerate() {
+        println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name(), player.elo_rating(), player.elo_rating() + player.condition_weight(), player.elo_rating() + player.rapid_weight(), player.elo_rating() + player.blitz_weight(), player.elo_rating() + player.bullet_weight());
+    }
+    for i in 0..4 {
+        loop {
+            let mut input = String::new();
+            match i {
+                0 => println!("\n{} 팀의 1국 장고(rapid) 기사 번호를 입력하세요:", team.team_name()),
+                1 => println!("\n{} 팀의 2국 속기(blitz) 기사 번호를 입력하세요:", team.team_name()),
+                2 => println!("\n{} 팀의 3국 속기(blitz) 기사 번호를 입력하세요:", team.team_name()),
+                3 => println!("\n{} 팀의 4국 속기(blitz) 기사 번호를 입력하세요:", team.team_name()),
+                _ => {}
+            }
+            io::stdin().read_line(&mut input).expect("입력을 읽는 데 실패했습니다.");
+            match input.trim().parse::<usize>() {
+                Ok(num) if num > 0 && num <= team.players().len() => {
+                    team_combination.push(&team.players()[num - 1]);
+                    break;
+                },
+                _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
+            }
+        }
+    }
+    team_combination
 }

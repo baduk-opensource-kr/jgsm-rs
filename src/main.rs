@@ -1,9 +1,10 @@
 mod models;
 mod utils;
+
 use chrono::Datelike;
+use models::{Lineup, MatchResult, Player, PlayerRelativity, Team};
 use std::collections::HashMap;
 use std::io::{self, Write};
-use models::{PlayerRelativity, Lineup, MatchResult, Player, Team};
 
 fn main() {
     let mut teams: Vec<Team> = Vec::new();
@@ -336,57 +337,8 @@ fn main() {
                         }
                     },
                     "4" => {
-                        let mut team1_combination: Vec<&Player> = Vec::new();
-                        println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name());
-                        for (index, player) in selected_teams[0].players().iter().enumerate() {
-                            println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name(), player.elo_rating(), player.elo_rating() + player.condition_weight(), player.elo_rating() + player.rapid_weight(), player.elo_rating() + player.blitz_weight(), player.elo_rating() + player.bullet_weight());
-                        }
-                        for i in 0..4 {
-                            loop {
-                                let mut input = String::new();
-                                match i {
-                                    0 => println!("\n{} 팀의 1국 장고(rapid) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
-                                    1 => println!("\n{} 팀의 2국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
-                                    2 => println!("\n{} 팀의 3국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
-                                    3 => println!("\n{} 팀의 4국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
-                                    _ => {}
-                                }
-                                io::stdin().read_line(&mut input).expect("입력을 읽는 데 실패했습니다.");
-                                match input.trim().parse::<usize>() {
-                                    Ok(num) if num > 0 && num <= selected_teams[0].players().len() => {
-                                        team1_combination.push(&selected_teams[0].players()[num - 1]);
-                                        break;
-                                    },
-                                    _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
-                                }
-                            }
-                        }
-
-                        let mut team2_combination: Vec<&Player> = Vec::new();
-                        println!("\n{} 팀의 스쿼드:", selected_teams[1].team_name());
-                        for (index, player) in selected_teams[1].players().iter().enumerate() {
-                            println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name(), player.elo_rating(), player.elo_rating() + player.condition_weight(), player.elo_rating() + player.rapid_weight(), player.elo_rating() + player.blitz_weight(), player.elo_rating() + player.bullet_weight());
-                        }
-                        for i in 0..4 {
-                            loop {
-                                let mut input = String::new();
-                                match i {
-                                    0 => println!("\n{} 팀의 1국 장고(rapid) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
-                                    1 => println!("\n{} 팀의 2국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
-                                    2 => println!("\n{} 팀의 3국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
-                                    3 => println!("\n{} 팀의 4국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
-                                    _ => {}
-                                }
-                                io::stdin().read_line(&mut input).expect("입력을 읽는 데 실패했습니다.");
-                                match input.trim().parse::<usize>() {
-                                    Ok(num) if num > 0 && num <= selected_teams[1].players().len() => {
-                                        team2_combination.push(&selected_teams[1].players()[num - 1]);
-                                        break;
-                                    },
-                                    _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
-                                }
-                            }
-                        }
+                        let team1_combination = utils::select_team_combination(&selected_teams[0]);
+                        let team2_combination = utils::select_team_combination(&selected_teams[1]);
 
                         let match_result = match_results_matrix.iter().flatten().find(|&result| {
                             result.first_rapid().player1().korean_name() == team1_combination[0].korean_name() && 
@@ -950,57 +902,8 @@ fn main() {
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
                     "9" => {
-                        let mut team1_combination: Vec<&Player> = Vec::new();
-                        println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name());
-                        for (index, player) in selected_teams[0].players().iter().enumerate() {
-                            println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name(), player.elo_rating(), player.elo_rating() + player.condition_weight(), player.elo_rating() + player.rapid_weight(), player.elo_rating() + player.blitz_weight(), player.elo_rating() + player.bullet_weight());
-                        }
-                        for i in 0..4 {
-                            loop {
-                                let mut input = String::new();
-                                match i {
-                                    0 => println!("\n{} 팀의 1국 장고(rapid) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
-                                    1 => println!("\n{} 팀의 2국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
-                                    2 => println!("\n{} 팀의 3국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
-                                    3 => println!("\n{} 팀의 4국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
-                                    _ => {}
-                                }
-                                io::stdin().read_line(&mut input).expect("입력을 읽는 데 실패했습니다.");
-                                match input.trim().parse::<usize>() {
-                                    Ok(num) if num > 0 && num <= selected_teams[0].players().len() => {
-                                        team1_combination.push(&selected_teams[0].players()[num - 1]);
-                                        break;
-                                    },
-                                    _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
-                                }
-                            }
-                        }
-
-                        let mut team2_combination: Vec<&Player> = Vec::new();
-                        println!("\n{} 팀의 스쿼드:", selected_teams[1].team_name());
-                        for (index, player) in selected_teams[1].players().iter().enumerate() {
-                            println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name(), player.elo_rating(), player.elo_rating() + player.condition_weight(), player.elo_rating() + player.rapid_weight(), player.elo_rating() + player.blitz_weight(), player.elo_rating() + player.bullet_weight());
-                        }
-                        for i in 0..4 {
-                            loop {
-                                let mut input = String::new();
-                                match i {
-                                    0 => println!("\n{} 팀의 1국 장고(rapid) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
-                                    1 => println!("\n{} 팀의 2국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
-                                    2 => println!("\n{} 팀의 3국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
-                                    3 => println!("\n{} 팀의 4국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
-                                    _ => {}
-                                }
-                                io::stdin().read_line(&mut input).expect("입력을 읽는 데 실패했습니다.");
-                                match input.trim().parse::<usize>() {
-                                    Ok(num) if num > 0 && num <= selected_teams[1].players().len() => {
-                                        team2_combination.push(&selected_teams[1].players()[num - 1]);
-                                        break;
-                                    },
-                                    _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
-                                }
-                            }
-                        }
+                        let team1_combination = utils::select_team_combination(&selected_teams[0]);
+                        let team2_combination = utils::select_team_combination(&selected_teams[1]);
 
                         let outcomes = ["WWLL", "WLWL", "WLLW", "LWWL", "LWLW", "LLWW"];
                         let mut outcome_map: HashMap<&str, Vec<PlayerRelativity>> = HashMap::new();

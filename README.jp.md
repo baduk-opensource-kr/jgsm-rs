@@ -8,7 +8,7 @@ KB囲碁リーグなどのチームゲームで勝敗を予測し、最善のオ
 [한국어](./README.md), [**日本語**](./README.ja.md), [English](./README.en.md)
 
 # リリースを実行する（一般ユーザー向け）
-[release](https://github.com/baduk-opensource-kr/jgsm-rs/releases/tag/release).
+[release](https://github.com/baduk-opensource-kr/jgsm-rs/releases/tag/0.2.0).
 リンクをクリックして、実行ファイルをダウンロードすれば使用できます。
 
 # ソースコードをビルドして実行する（開発者）

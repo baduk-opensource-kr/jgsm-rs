@@ -27,7 +27,7 @@ cargo run
 - [x] Output of average best lineup for the best 24 lineups of the opposing team (best members of the opposing team)
 - [x] Output of counterpick immune lineup (Counterpick: the lineup with the lowest win probability, the lineup with the highest win probability when counterpicked)
 - [x] Output of counterpick for the expected lineup of the opposing team
-- [ ] Output of predicted win rate for ace deciding matches
+- [x] Output of predicted win rate for ace deciding matches
 - [ ] Output of real-time lineup applied with postseason rules
 - [ ] Output of best lineup and win probability for the Legend League, Senior Baduk League, Women's Baduk League, Chinese First Division League, and Nongshim Cup
 

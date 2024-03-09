@@ -1,8 +1,9 @@
 mod models;
 mod utils;
 use chrono::Datelike;
+use std::collections::HashMap;
 use std::io::{self, Write};
-use models::{Lineup, MatchResult, Player, Team};
+use models::{PlayerRelativity, Lineup, MatchResult, Player, Team};
 
 fn main() {
     let mut teams: Vec<Team> = Vec::new();
@@ -307,7 +308,7 @@ fn main() {
                 println!("6. {} 베스트24 라인업에 대한 {} 최고 평균승률 라인업", selected_teams[1].team_name(), selected_teams[0].team_name());
                 println!("7. {} 카운터픽 면역 라인업", selected_teams[0].team_name());
                 println!("8. {} 예상라인업에 대한 {} 카운터픽\n", selected_teams[1].team_name(), selected_teams[0].team_name());
-                println!("9. 에이스 결정전(추가예정)");
+                println!("9. 에이스 결정전 Excel로 출력");
 
                 println!("exit. 종료");
 
@@ -947,6 +948,128 @@ fn main() {
                         println!("\n계속하려면 엔터를 누르세요.");
                         let mut pause = String::new();
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
+                    },
+                    "9" => {
+                        let mut team1_combination: Vec<&Player> = Vec::new();
+                        println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name());
+                        for (index, player) in selected_teams[0].players().iter().enumerate() {
+                            println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name(), player.elo_rating(), player.elo_rating() + player.condition_weight(), player.elo_rating() + player.rapid_weight(), player.elo_rating() + player.blitz_weight(), player.elo_rating() + player.bullet_weight());
+                        }
+                        for i in 0..4 {
+                            loop {
+                                let mut input = String::new();
+                                match i {
+                                    0 => println!("\n{} 팀의 1국 장고(rapid) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
+                                    1 => println!("\n{} 팀의 2국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
+                                    2 => println!("\n{} 팀의 3국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
+                                    3 => println!("\n{} 팀의 4국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[0].team_name()),
+                                    _ => {}
+                                }
+                                io::stdin().read_line(&mut input).expect("입력을 읽는 데 실패했습니다.");
+                                match input.trim().parse::<usize>() {
+                                    Ok(num) if num > 0 && num <= selected_teams[0].players().len() => {
+                                        team1_combination.push(&selected_teams[0].players()[num - 1]);
+                                        break;
+                                    },
+                                    _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
+                                }
+                            }
+                        }
+
+                        let mut team2_combination: Vec<&Player> = Vec::new();
+                        println!("\n{} 팀의 스쿼드:", selected_teams[1].team_name());
+                        for (index, player) in selected_teams[1].players().iter().enumerate() {
+                            println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name(), player.elo_rating(), player.elo_rating() + player.condition_weight(), player.elo_rating() + player.rapid_weight(), player.elo_rating() + player.blitz_weight(), player.elo_rating() + player.bullet_weight());
+                        }
+                        for i in 0..4 {
+                            loop {
+                                let mut input = String::new();
+                                match i {
+                                    0 => println!("\n{} 팀의 1국 장고(rapid) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
+                                    1 => println!("\n{} 팀의 2국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
+                                    2 => println!("\n{} 팀의 3국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
+                                    3 => println!("\n{} 팀의 4국 속기(blitz) 기사 번호를 입력하세요:", selected_teams[1].team_name()),
+                                    _ => {}
+                                }
+                                io::stdin().read_line(&mut input).expect("입력을 읽는 데 실패했습니다.");
+                                match input.trim().parse::<usize>() {
+                                    Ok(num) if num > 0 && num <= selected_teams[1].players().len() => {
+                                        team2_combination.push(&selected_teams[1].players()[num - 1]);
+                                        break;
+                                    },
+                                    _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
+                                }
+                            }
+                        }
+
+                        let outcomes = ["WWLL", "WLWL", "WLLW", "LWWL", "LWLW", "LLWW"];
+                        let mut outcome_map: HashMap<&str, Vec<PlayerRelativity>> = HashMap::new();
+
+                        for &outcome in outcomes.iter() {
+                            let defeated_players: Vec<&Player> = outcome.chars().enumerate().map(|(i, result)| {
+                                match result {
+                                    'W' => team2_combination[i], // 승리는 상대 팀의 선수가 패배
+                                    'L' => team1_combination[i], // 패배는 자신의 팀의 선수가 패배
+                                    _ => unreachable!(),
+                                }
+                            }).collect();
+
+                            let tiebreaker_relativities = player_relativities.iter()
+                                .map(|relativity| {
+                                    let player1_position = team1_combination.iter().position(|p| p.korean_name() == relativity.player1().korean_name());
+                                    let player2_position = team2_combination.iter().position(|p| p.korean_name() == relativity.player2().korean_name());
+                                    let player1_penalty = if let Some(pos) = player1_position {
+                                        let base_penalty = match pos {
+                                            0 => 0.95,
+                                            1 => 0.98,
+                                            _ => 0.90,
+                                        };
+                                        if defeated_players.contains(&team1_combination[pos]) {
+                                            base_penalty * 0.90
+                                        } else {
+                                            base_penalty
+                                        }
+                                    } else {
+                                        1.0
+                                    };
+
+                                    let player2_penalty = if let Some(pos) = player2_position {
+                                        let base_penalty = match pos {
+                                            0 => 1.0 / 0.95,
+                                            1 => 1.0 / 0.98,
+                                            _ => 1.0 / 0.90,
+                                        };
+                                        if defeated_players.contains(&team2_combination[pos]) {
+                                            base_penalty * (1.0 / 0.90)
+                                        } else {
+                                            base_penalty
+                                        }
+                                    } else {
+                                        1.0
+                                    };
+
+                                    let modified_bullet_win_probability = relativity.bullet_win_probability() * player1_penalty * player2_penalty;
+                                    PlayerRelativity::new(
+                                        relativity.player1().clone(),
+                                        relativity.player2().clone(),
+                                        relativity.player1_wins(),
+                                        relativity.player2_wins(),
+                                        relativity.elo_win_probability(),
+                                        relativity.condition_win_probability(),
+                                        relativity.rapid_win_probability(),
+                                        relativity.blitz_win_probability(),
+                                        modified_bullet_win_probability,
+                                    )
+                                })
+                                .collect::<Vec<PlayerRelativity>>();
+
+                            outcome_map.insert(outcome, tiebreaker_relativities);
+                        }
+
+                        match utils::create_excel_from_tiebreaker_relativities(outcome_map.clone()) {
+                            Ok(_) => println!("Excel 파일이 성공적으로 생성되었습니다."),
+                            Err(e) => println!("Excel 파일 생성 중 오류가 발생했습니다: {}", e),
+                        }
                     },
                     "exit" => break,
                     _ => println!("잘못된 입력입니다. 다시 입력해주세요."),

@@ -195,7 +195,7 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
                     _ => 0.90,
                 }
             } else {
-                1.0 // 순서에 없는 선수는 패널티 없음
+                1.0
             };
             let player2_penalty = if let Some(pos) = player2_position {
                 match pos {
@@ -204,7 +204,7 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
                     _ => 1.0 / 0.90,
                 }
             } else {
-                1.0 // 순서에 없는 선수는 패널티 없음
+                1.0
             };
             (relativity.player1().korean_name().clone(), relativity.bullet_win_probability() * player1_penalty * player2_penalty)
         })
@@ -378,8 +378,67 @@ pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>
     Ok(())
 }
 
+pub fn create_excel_from_tiebreaker_relativities(outcome_map: HashMap<&str, Vec<PlayerRelativity>>) -> Result<(), Box<dyn std::error::Error>> {
+    let workbook = Workbook::new("tiebreaker_relativities.xlsx")?;
+
+    for (outcome, tiebreaker_relativities) in outcome_map {
+        let worksheet_name = format!("에결-{}", outcome);
+        let mut worksheet = workbook.add_worksheet(Some(&worksheet_name))?;
+
+        let mut player1_set = HashSet::new();
+        let mut player2_set = HashSet::new();
+
+        for relativity in &tiebreaker_relativities {
+            player1_set.insert(relativity.player1().korean_name().clone());
+            player2_set.insert(relativity.player2().korean_name().clone());
+        }
+
+        let player1s: Vec<_> = player1_set.into_iter().sorted_by(|a, b| {
+            let a_score = tiebreaker_relativities.iter().find(|relativity| relativity.player1().korean_name() == a)
+                .map_or(0.0, |relativity| relativity.player1().elo_rating() + relativity.player1().condition_weight() + relativity.player1().bullet_weight());
+            let b_score = tiebreaker_relativities.iter().find(|relativity| relativity.player1().korean_name() == b)
+                .map_or(0.0, |relativity| relativity.player1().elo_rating() + relativity.player1().condition_weight() + relativity.player1().bullet_weight());
+            b_score.partial_cmp(&a_score).unwrap_or(std::cmp::Ordering::Equal)
+        }).collect();
+
+        let player2s: Vec<_> = player2_set.into_iter().sorted_by(|a, b| {
+            let a_score = tiebreaker_relativities.iter().find(|relativity| relativity.player2().korean_name() == a)
+                .map_or(0.0, |relativity| relativity.player2().elo_rating() + relativity.player2().condition_weight() + relativity.player2().bullet_weight());
+            let b_score = tiebreaker_relativities.iter().find(|relativity| relativity.player2().korean_name() == b)
+                .map_or(0.0, |relativity| relativity.player2().elo_rating() + relativity.player2().condition_weight() + relativity.player2().bullet_weight());
+            b_score.partial_cmp(&a_score).unwrap_or(std::cmp::Ordering::Equal)
+        }).collect();
+
+        let mut player1_index = HashMap::new();
+        let mut player2_index = HashMap::new();
+
+        for (index, player) in player1s.iter().enumerate() {
+            worksheet.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
+            player1_index.insert(player.clone(), index + 1);
+        }
+
+        for (index, player) in player2s.iter().enumerate() {
+            worksheet.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
+            player2_index.insert(player.clone(), index + 1);
+        }
+
+        for relativity in &tiebreaker_relativities {
+            let row = player1_index[relativity.player1().korean_name()];
+            let col = player2_index[relativity.player2().korean_name()];
+
+            let format = create_custom_format(relativity.bullet_win_probability(), 15.0)?;
+
+            worksheet.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.bullet_win_probability() / 100.0, Some(&format))?;
+        }
+    }
+
+    workbook.close()?;
+
+    Ok(())
+}
+
 pub fn create_custom_format(win_probability: f64, maximum: f64) -> Result<Format, Box<dyn std::error::Error>> {
-    let mut format = Format::new(); // 새로운 포맷 인스턴스 생성
+    let mut format = Format::new();
 
     // 승리확률에 따라 색상을 점진적으로 변경합니다.
     let custom_color = if win_probability >= (100.0 - maximum) {
@@ -387,18 +446,15 @@ pub fn create_custom_format(win_probability: f64, maximum: f64) -> Result<Format
     } else if win_probability <= maximum {
         FormatColor::Red
     } else {
-        // 50%에 가까울수록 하얀색, 85% 또는 15%에 가까울수록 각각 파란색 또는 빨간색으로 점진적으로 변화
+        // 50%에 가까울수록 하얀색
         let (red, blue) = if win_probability > 50.0 {
-            // 50%에서 85% 사이일 때 파란색으로 점진적으로 변화
             let gradient = (win_probability - 50.0) / (50.0 - maximum);
             (255.0 * (1.0 - gradient), 255.0)
         } else {
-            // 15%에서 50% 사이일 때 빨간색으로 점진적으로 변화
             let gradient = (50.0 - win_probability) / (50.0 - maximum);
             (255.0, 255.0 * (1.0 - gradient))
         };
 
-        // 50%에 가까울수록 하얀색이 되도록 초록색 성분도 조절
         let green = if win_probability > 50.0 {
             255.0 * (1.0 - (win_probability - 50.0) / (50.0 - maximum))
         } else {
@@ -408,7 +464,7 @@ pub fn create_custom_format(win_probability: f64, maximum: f64) -> Result<Format
         FormatColor::Custom((red as u32) << 16 | (green as u32) << 8 | blue as u32)
     };
 
-    format.set_num_format("0.00%").set_bg_color(custom_color); // 포맷에 숫자 형식과 배경색 설정
+    format.set_num_format("0.00%").set_bg_color(custom_color);
 
-    Ok(format) // 설정된 포맷 반환
+    Ok(format)
 }

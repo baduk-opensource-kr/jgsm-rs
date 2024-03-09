@@ -19,18 +19,12 @@ pub fn calculate_win_probability_with_relative_record(player1_elo: f64, player2_
     let base_probability = calculate_win_probability(player1_elo, player2_elo);
     let total_games = player1_wins + player2_wins;
     let win_rate_difference = if total_games > 0 {
-        (player1_wins as f64 / total_games as f64) - (player2_wins as f64 / total_games as f64)
+        player1_wins as f64 / total_games as f64
     } else {
         0.0
     };
-        let adjusted_probability = base_probability + (win_rate_difference * (0.01 * total_games.min(5) as f64));
-    if adjusted_probability > 1.0 {
-        1.0
-    } else if adjusted_probability < 0.0 {
-        0.0
-    } else {
-        adjusted_probability
-    }
+
+    ((base_probability * (15.0 - total_games.min(14) as f64)) + (win_rate_difference * total_games.min(14) as f64)) / 15.0
 }
 
 pub fn fetch_player_ratings_on_baeteil() -> Result<HashMap<String, f64>, Box<dyn std::error::Error>> {

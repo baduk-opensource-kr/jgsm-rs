@@ -8,7 +8,7 @@ Joint Go Strategy Matrix(공동의 바둑 전략 메트릭스) - JGSM: 전기새
 [**한국어**](./README.md), [日本語](./README.jp.md), [English](./README.en.md)
 
 # 릴리즈 실행하기(일반 사용자)
-[release](https://github.com/baduk-opensource-kr/jgsm-rs/releases/tag/release).
+[release](https://github.com/baduk-opensource-kr/jgsm-rs/releases/tag/0.2.p).
 링크를 클릭하여, 실행파일을 다운받으시면 사용할 수 있습니다.
 
 # 소스코드를 빌드하여 실행하기(개발자)

@@ -8,7 +8,7 @@ Outputs a matrix that predicts the outcome of team games such as Go leagues and 
 [한국어](./README.md), [日本語](./README.jp.md), [**English**](./README.en.md)
 
 # Running the Release (For General Users)
-[release](https://github.com/baduk-opensource-kr/jgsm-rs/releases/tag/release).
+[release](https://github.com/baduk-opensource-kr/jgsm-rs/releases/tag/0.2.0).
 Click the link to download the executable file and you will be able to use it.
 
 # Building and Running from Source (For Developers)

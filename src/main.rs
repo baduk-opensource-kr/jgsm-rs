@@ -307,10 +307,14 @@ fn main() {
                 println!("4. 지정 라인업 승리확률\n");
                 println!("5. {} 최고 평균승률 라인업", selected_teams[0].team_name());
                 println!("6. {} 베스트24 라인업에 대한 {} 최고 평균승률 라인업", selected_teams[1].team_name(), selected_teams[0].team_name());
-                println!("7. {} 카운터픽 면역 라인업", selected_teams[0].team_name());
-                println!("8. {} 예상라인업에 대한 {} 카운터픽\n", selected_teams[1].team_name(), selected_teams[0].team_name());
-                println!("9. 에이스 결정전 Excel로 출력");
+                println!("7. {} 미니맥스 라인업(최선 + 상대 카운터픽)", selected_teams[0].team_name());
+                println!("8. {} 예상라인업에 대한 {} 카운터픽(최고평균)", selected_teams[1].team_name(), selected_teams[0].team_name());
+                println!("9. {} 예상라인업에 대한 {} 카운터픽(미니맥스)\n", selected_teams[1].team_name(), selected_teams[0].team_name());
 
+                println!("10. 에이스 결정전 Excel로 출력\n");
+
+                println!("11. 포스트시즌: {} 5인에 대한 {} 카운터픽(개발중..)", selected_teams[1].team_name(), selected_teams[0].team_name());
+                println!("12. 포스트시즌: 5판 3선승제 3-1-1 순서 오더 실시간 최선의 라인업(개발중..)\n");
                 println!("exit. 종료");
 
                 let mut option = String::new();
@@ -356,11 +360,11 @@ fn main() {
                         println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[1].korean_name(), team2_combination[1].korean_name(), chrono::Utc::now().year() - 1, match_result.second_blitz().player1_wins(), match_result.second_blitz().player2_wins(), match_result.second_blitz_win_probability());
                         println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[2].korean_name(), team2_combination[2].korean_name(), chrono::Utc::now().year() - 1, match_result.third_blitz().player1_wins(), match_result.third_blitz().player2_wins(), match_result.third_blitz_win_probability());
                         println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[3].korean_name(), team2_combination[3].korean_name(), chrono::Utc::now().year() - 1, match_result.forth_blitz().player1_wins(), match_result.forth_blitz().player2_wins(), match_result.forth_blitz_win_probability());
-                        println!("\n4-0: {:.2}%", match_result.perfect_win_probability());
-                        println!("3-1: {:.2}%", match_result.win_probability());
-                        println!("2-2: {:.2}%", match_result.tie_probability());
-                        println!("1-3: {:.2}%", match_result.lose_probability());
-                        println!("0-4: {:.2}%", match_result.perfect_defeat_probability());
+                        println!("\n4-0: {:.2}%", match_result.four_zero_probability());
+                        println!("3-1: {:.2}%", match_result.three_one_probability());
+                        println!("2-2: {:.2}%", match_result.two_two_probability());
+                        println!("1-3: {:.2}%", match_result.one_three_probability());
+                        println!("0-4: {:.2}%", match_result.zero_four_probability());
                         println!("\n총 승리확률: {:.2}%", match_result.total_win_probability());
                         println!("에이스결정전 예상 승리확률: {:.2}%", match_result.tiebreaker_win_probability());
                         println!("========================");
@@ -370,12 +374,14 @@ fn main() {
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
                     "5" => {
+                        let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
+
                         let mut avg_probabilities: Vec<(Lineup, f64, f64, f64, f64, f64, f64, f64, f64)> = Vec::new();
-                        for lineup in &team1_all_lineups {
+                        for lineup in &team1_filtered_lineups {
                             let mut total_win_prob = 0.0;
-                            let mut win_prob = 0.0;
-                            let mut perfect_win_prob = 0.0;
-                            let mut tie_prob = 0.0;
+                            let mut three_one_prob = 0.0;
+                            let mut four_zero_prob = 0.0;
+                            let mut two_two_prob = 0.0;
                             let mut first_rapid_win_prob = 0.0;
                             let mut second_blitz_win_prob = 0.0;
                             let mut third_blitz_win_prob = 0.0;
@@ -389,9 +395,9 @@ fn main() {
                                        result.third_blitz().player1().korean_name() == lineup.third_blitz().korean_name() &&
                                        result.forth_blitz().player1().korean_name() == lineup.forth_blitz().korean_name() {
                                         total_win_prob += result.total_win_probability();
-                                        win_prob += result.perfect_win_probability() + result.win_probability();
-                                        perfect_win_prob += result.perfect_win_probability();
-                                        tie_prob += result.tie_probability();
+                                        three_one_prob += result.four_zero_probability() + result.three_one_probability();
+                                        four_zero_prob += result.four_zero_probability();
+                                        two_two_prob += result.two_two_probability();
                                         first_rapid_win_prob += result.first_rapid_win_probability();
                                         second_blitz_win_prob += result.second_blitz_win_probability();
                                         third_blitz_win_prob += result.third_blitz_win_probability();
@@ -405,9 +411,9 @@ fn main() {
                                 avg_probabilities.push((
                                     lineup.clone(),
                                     total_win_prob / count,
-                                    win_prob / count,
-                                    perfect_win_prob / count,
-                                    tie_prob / count,
+                                    three_one_prob / count,
+                                    four_zero_prob / count,
+                                    two_two_prob / count,
                                     first_rapid_win_prob / count,
                                     second_blitz_win_prob / count,
                                     third_blitz_win_prob / count,
@@ -419,7 +425,7 @@ fn main() {
 
                         println!("========================");
                         avg_probabilities.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 총 승리확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), avg_second_blitz_win_prob);
@@ -427,8 +433,8 @@ fn main() {
                             println!("4국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -444,7 +450,7 @@ fn main() {
                                 b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal)
                             }
                         });
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 동점 없는 승리확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), avg_second_blitz_win_prob);
@@ -452,8 +458,8 @@ fn main() {
                             println!("4국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -469,7 +475,7 @@ fn main() {
                                 b.3.partial_cmp(&a.3).unwrap_or(std::cmp::Ordering::Equal)
                             }
                         });
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 완봉승확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), avg_second_blitz_win_prob);
@@ -477,8 +483,8 @@ fn main() {
                             println!("4국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -494,7 +500,7 @@ fn main() {
                                 b.4.partial_cmp(&a.4).unwrap_or(std::cmp::Ordering::Equal)
                             }
                         });
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 동점 확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), avg_second_blitz_win_prob);
@@ -502,8 +508,8 @@ fn main() {
                             println!("4국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -514,12 +520,14 @@ fn main() {
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
                     "6" => {
+                        let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
+
                         let mut avg_probabilities: Vec<(Lineup, f64, f64, f64, f64, f64, f64, f64, f64)> = Vec::new();
-                        for lineup in &team1_all_lineups {
+                        for lineup in &team1_filtered_lineups {
                             let mut total_win_prob = 0.0;
-                            let mut win_prob = 0.0;
-                            let mut perfect_win_prob = 0.0;
-                            let mut tie_prob = 0.0;
+                            let mut three_one_prob = 0.0;
+                            let mut four_zero_prob = 0.0;
+                            let mut two_two_prob = 0.0;
                             let mut first_rapid_win_prob = 0.0;
                             let mut second_blitz_win_prob = 0.0;
                             let mut third_blitz_win_prob = 0.0;
@@ -536,9 +544,9 @@ fn main() {
                             ) {
                                 for result in match_result.iter().take(24) {
                                     total_win_prob += result.total_win_probability();
-                                    win_prob += result.perfect_win_probability() + result.win_probability();
-                                    perfect_win_prob += result.perfect_win_probability();
-                                    tie_prob += result.tie_probability();
+                                    three_one_prob += result.four_zero_probability() + result.three_one_probability();
+                                    four_zero_prob += result.four_zero_probability();
+                                    two_two_prob += result.two_two_probability();
                                     first_rapid_win_prob += result.first_rapid_win_probability();
                                     second_blitz_win_prob += result.second_blitz_win_probability();
                                     third_blitz_win_prob += result.third_blitz_win_probability();
@@ -551,9 +559,9 @@ fn main() {
                                 avg_probabilities.push((
                                     lineup.clone(),
                                     total_win_prob / count,
-                                    win_prob / count,
-                                    perfect_win_prob / count,
-                                    tie_prob / count,
+                                    three_one_prob / count,
+                                    four_zero_prob / count,
+                                    two_two_prob / count,
                                     first_rapid_win_prob / count,
                                     second_blitz_win_prob / count,
                                     third_blitz_win_prob / count,
@@ -565,7 +573,7 @@ fn main() {
 
                         println!("========================");
                         avg_probabilities.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 총 승리확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), avg_second_blitz_win_prob);
@@ -573,8 +581,8 @@ fn main() {
                             println!("4국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -590,7 +598,7 @@ fn main() {
                                 b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal)
                             }
                         });
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 동점 없는 승리확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), avg_second_blitz_win_prob);
@@ -598,8 +606,8 @@ fn main() {
                             println!("4국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -615,7 +623,7 @@ fn main() {
                                 b.3.partial_cmp(&a.3).unwrap_or(std::cmp::Ordering::Equal)
                             }
                         });
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 완봉승확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), avg_second_blitz_win_prob);
@@ -623,8 +631,8 @@ fn main() {
                             println!("4국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -640,7 +648,7 @@ fn main() {
                                 b.4.partial_cmp(&a.4).unwrap_or(std::cmp::Ordering::Equal)
                             }
                         });
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 동점 확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), avg_second_blitz_win_prob);
@@ -648,8 +656,8 @@ fn main() {
                             println!("4국 속기(blitz): {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -660,10 +668,12 @@ fn main() {
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
                     "7" => {
+                        let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
+
                         let mut best_match_result: Option<&MatchResult> = None;
                         let mut highest_min_total_win_prob = 0.0;
 
-                        for lineup in &team1_all_lineups {
+                        for lineup in &team1_filtered_lineups {
                             let mut min_total_win_prob = std::f64::MAX;
 
                             for match_result in &match_results_matrix {
@@ -697,11 +707,11 @@ fn main() {
                             println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.second_blitz().player1().korean_name(), best_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.second_blitz().player1_wins(), best_result.second_blitz().player2_wins(), best_result.second_blitz_win_probability());
                             println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.third_blitz().player1().korean_name(), best_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.third_blitz().player1_wins(), best_result.third_blitz().player2_wins(), best_result.third_blitz_win_probability());
                             println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.forth_blitz().player1().korean_name(), best_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.forth_blitz().player1_wins(), best_result.forth_blitz().player2_wins(), best_result.forth_blitz_win_probability());
-                            println!("\n4-0: {:.2}%", best_result.perfect_win_probability());
-                            println!("3-1: {:.2}%", best_result.win_probability());
-                            println!("2-2: {:.2}%", best_result.tie_probability());
-                            println!("1-3: {:.2}%", best_result.lose_probability());
-                            println!("0-4: {:.2}%", best_result.perfect_defeat_probability());
+                            println!("\n4-0: {:.2}%", best_result.four_zero_probability());
+                            println!("3-1: {:.2}%", best_result.three_one_probability());
+                            println!("2-2: {:.2}%", best_result.two_two_probability());
+                            println!("1-3: {:.2}%", best_result.one_three_probability());
+                            println!("0-4: {:.2}%", best_result.zero_four_probability());
                             println!("\n총 승리확률: {:.2}%", best_result.total_win_probability());
                             println!("에이스결정전 예상 승리확률: {:.2}%", best_result.tiebreaker_win_probability());
                         } else {
@@ -715,8 +725,11 @@ fn main() {
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
                     "8" => {
-                        let mut team2_combination: Vec<&Player> = Vec::new();
+                        let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
+
                         let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), 0.0, 0.0, 0.0, 0.0, 0.0);
+
+                        let mut team2_combination: Vec<&Player> = Vec::new();
                         println!("\n{} 팀의 스쿼드:", selected_teams[1].team_name());
                         let mut last_index = 0;
                         for (index, player) in selected_teams[1].players().iter().enumerate() {
@@ -743,15 +756,15 @@ fn main() {
                             }
                         }
 
-                        let unknown_player_count = team2_combination.iter().filter(|&player| player.english_name() == "unknown").count();
-                        let combinations = [36, 9, 4, 2, 1][unknown_player_count.min(4)];
+                        let team2_unknown_player_count = team2_combination.iter().filter(|&player| player.english_name() == "unknown").count();
+                        let team2_combinations = [36, 9, 4, 2, 1][team2_unknown_player_count.min(4)];
 
                         let mut avg_probabilities: Vec<(Lineup, f64, f64, f64, f64, f64, f64, f64, f64)> = Vec::new();
-                        for lineup in &team1_all_lineups {
+                        for lineup in &team1_filtered_lineups {
                             let mut total_win_prob = 0.0;
-                            let mut win_prob = 0.0;
-                            let mut perfect_win_prob = 0.0;
-                            let mut tie_prob = 0.0;
+                            let mut three_one_prob = 0.0;
+                            let mut four_zero_prob = 0.0;
+                            let mut two_two_prob = 0.0;
                             let mut first_rapid_win_prob = 0.0;
                             let mut second_blitz_win_prob = 0.0;
                             let mut third_blitz_win_prob = 0.0;
@@ -771,15 +784,15 @@ fn main() {
                                     })
                                 );
 
-                                for result in filtered_results.take(combinations) {
+                                for result in filtered_results.take(team2_combinations) {
                                     if result.first_rapid().player1().korean_name() == lineup.first_rapid().korean_name() &&
                                     result.second_blitz().player1().korean_name() == lineup.second_blitz().korean_name() &&
                                     result.third_blitz().player1().korean_name() == lineup.third_blitz().korean_name() &&
                                     result.forth_blitz().player1().korean_name() == lineup.forth_blitz().korean_name() {
                                         total_win_prob += result.total_win_probability();
-                                        win_prob += result.perfect_win_probability() + result.win_probability();
-                                        perfect_win_prob += result.perfect_win_probability();
-                                        tie_prob += result.tie_probability();
+                                        three_one_prob += result.four_zero_probability() + result.three_one_probability();
+                                        four_zero_prob += result.four_zero_probability();
+                                        two_two_prob += result.two_two_probability();
                                         first_rapid_win_prob += result.first_rapid_win_probability();
                                         second_blitz_win_prob += result.second_blitz_win_probability();
                                         third_blitz_win_prob += result.third_blitz_win_probability();
@@ -793,9 +806,9 @@ fn main() {
                                 avg_probabilities.push((
                                     lineup.clone(),
                                     total_win_prob / count,
-                                    win_prob / count,
-                                    perfect_win_prob / count,
-                                    tie_prob / count,
+                                    three_one_prob / count,
+                                    four_zero_prob / count,
+                                    two_two_prob / count,
                                     first_rapid_win_prob / count,
                                     second_blitz_win_prob / count,
                                     third_blitz_win_prob / count,
@@ -807,7 +820,7 @@ fn main() {
 
                         println!("========================");
                         avg_probabilities.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 총 승리확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), team2_combination[0].korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), team2_combination[1].korean_name(), avg_second_blitz_win_prob);
@@ -815,8 +828,8 @@ fn main() {
                             println!("4국 속기(blitz): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), team2_combination[3].korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -832,7 +845,7 @@ fn main() {
                                 b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal)
                             }
                         });
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 동점 없는 승리확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), team2_combination[0].korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), team2_combination[1].korean_name(), avg_second_blitz_win_prob);
@@ -840,8 +853,8 @@ fn main() {
                             println!("4국 속기(blitz): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), team2_combination[3].korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -857,7 +870,7 @@ fn main() {
                                 b.3.partial_cmp(&a.3).unwrap_or(std::cmp::Ordering::Equal)
                             }
                         });
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 완봉승확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), team2_combination[0].korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), team2_combination[1].korean_name(), avg_second_blitz_win_prob);
@@ -865,8 +878,8 @@ fn main() {
                             println!("4국 속기(blitz): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), team2_combination[3].korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -882,7 +895,7 @@ fn main() {
                                 b.4.partial_cmp(&a.4).unwrap_or(std::cmp::Ordering::Equal)
                             }
                         });
-                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_perfect_win_prob, avg_tie_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
+                        if let Some((best_lineup, avg_total_win_prob, avg_win_prob, avg_four_zero_prob, avg_two_two_prob, avg_first_rapid_win_prob, avg_second_blitz_win_prob, avg_third_blitz_win_prob, avg_forth_blitz_win_prob)) = avg_probabilities.first() {
                             println!("평균 동점 확률이 가장 높은 라인업");
                             println!("1국 장고(rapid): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.first_rapid().korean_name(), team2_combination[0].korean_name(), avg_first_rapid_win_prob);
                             println!("2국 속기(blitz): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.second_blitz().korean_name(), team2_combination[1].korean_name(), avg_second_blitz_win_prob);
@@ -890,8 +903,8 @@ fn main() {
                             println!("4국 속기(blitz): {} vs {} (평균 승리확률: {:.2}%)", best_lineup.forth_blitz().korean_name(), team2_combination[3].korean_name(), avg_forth_blitz_win_prob);
                             println!("\n평균 총 승리확률: {:.2}%", avg_total_win_prob);
                             println!("평균 동점 없는 승리확률: {:.2}%", avg_win_prob);
-                            println!("평균 완봉승 확률: {:.2}%", avg_perfect_win_prob);
-                            println!("평균 동점 확률: {:.2}%", avg_tie_prob);
+                            println!("평균 완봉승 확률: {:.2}%", avg_four_zero_prob);
+                            println!("평균 동점 확률: {:.2}%", avg_two_two_prob);
                         } else {
                             println!("적합한 구성을 찾을 수 없습니다.");
                         }
@@ -902,6 +915,102 @@ fn main() {
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
                     "9" => {
+                        let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
+
+                        let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), 0.0, 0.0, 0.0, 0.0, 0.0);
+
+                        let mut team2_combination: Vec<&Player> = Vec::new();
+                        println!("\n{} 팀의 스쿼드:", selected_teams[1].team_name());
+                        let mut last_index = 0;
+                        for (index, player) in selected_teams[1].players().iter().enumerate() {
+                            println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name(), player.elo_rating(), player.condition_weight(), player.rapid_weight(), player.blitz_weight(), player.bullet_weight());
+                            last_index = index;
+                        }
+                        println!("{}. 알 수 없음", last_index + 2);
+                        for i in 0..4 {
+                            loop {
+                                let mut input = String::new();
+                                println!("\n{} 팀의 {}국 {} 기사 번호를 입력하세요:", selected_teams[1].team_name(), i + 1, if i == 0 { "장고(rapid)" } else { "속기(blitz)" });
+                                io::stdin().read_line(&mut input).expect("입력을 읽는 데 실패했습니다.");
+                                match input.trim().parse::<usize>() {
+                                    Ok(num) if num > 0 && num <= selected_teams[1].players().len() => {
+                                        team2_combination.push(&selected_teams[1].players()[num - 1]);
+                                        break;
+                                    },
+                                    Ok(num) if num == selected_teams[1].players().len() + 1 => {
+                                        team2_combination.push(&unknown_player);
+                                        break;
+                                    },
+                                    _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
+                                }
+                            }
+                        }
+
+                        let mut best_match_result: Option<&MatchResult> = None;
+                        let mut highest_min_total_win_prob = 0.0;
+
+                        for lineup in &team1_filtered_lineups {
+                            let mut min_total_win_prob = std::f64::MAX;
+                            for match_result in &match_results_matrix {
+                                let filtered_results = match_result.iter().filter(|result| 
+                                    team2_combination.iter().enumerate().all(|(index, player)| {
+                                        match index {
+                                            0 => player.english_name() == "unknown" || player.korean_name() == result.first_rapid().player2().korean_name(),
+                                            1 => player.english_name() == "unknown" || player.korean_name() == result.second_blitz().player2().korean_name(),
+                                            2 => player.english_name() == "unknown" || player.korean_name() == result.third_blitz().player2().korean_name(),
+                                            3 => player.english_name() == "unknown" || player.korean_name() == result.forth_blitz().player2().korean_name(),
+                                            _ => false,
+                                        }
+                                    })
+                                );
+                                for result in filtered_results {
+                                    if result.first_rapid().player1().korean_name() == lineup.first_rapid().korean_name() &&
+                                       result.second_blitz().player1().korean_name() == lineup.second_blitz().korean_name() &&
+                                       result.third_blitz().player1().korean_name() == lineup.third_blitz().korean_name() &&
+                                       result.forth_blitz().player1().korean_name() == lineup.forth_blitz().korean_name() {
+                                        if result.total_win_probability() < min_total_win_prob {
+                                            min_total_win_prob = result.total_win_probability();
+                                        }
+                                    }
+                                }
+                            }
+
+                            if min_total_win_prob != std::f64::MAX && min_total_win_prob > highest_min_total_win_prob {
+                                highest_min_total_win_prob = min_total_win_prob;
+                                best_match_result = match_results_matrix.iter().flatten().find(|&r| 
+                                    r.first_rapid().player1().korean_name() == lineup.first_rapid().korean_name() &&
+                                    r.second_blitz().player1().korean_name() == lineup.second_blitz().korean_name() &&
+                                    r.third_blitz().player1().korean_name() == lineup.third_blitz().korean_name() &&
+                                    r.forth_blitz().player1().korean_name() == lineup.forth_blitz().korean_name() &&
+                                    (r.total_win_probability() - highest_min_total_win_prob).abs() < std::f64::EPSILON
+                                );
+                            }
+                        }
+
+                        println!("========================");
+                        if let Some(best_result) = best_match_result {
+                            println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.first_rapid().player1().korean_name(), best_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.first_rapid().player1_wins(), best_result.first_rapid().player2_wins(), best_result.first_rapid_win_probability());
+                            println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.second_blitz().player1().korean_name(), best_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.second_blitz().player1_wins(), best_result.second_blitz().player2_wins(), best_result.second_blitz_win_probability());
+                            println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.third_blitz().player1().korean_name(), best_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.third_blitz().player1_wins(), best_result.third_blitz().player2_wins(), best_result.third_blitz_win_probability());
+                            println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.forth_blitz().player1().korean_name(), best_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.forth_blitz().player1_wins(), best_result.forth_blitz().player2_wins(), best_result.forth_blitz_win_probability());
+                            println!("\n4-0: {:.2}%", best_result.four_zero_probability());
+                            println!("3-1: {:.2}%", best_result.three_one_probability());
+                            println!("2-2: {:.2}%", best_result.two_two_probability());
+                            println!("1-3: {:.2}%", best_result.one_three_probability());
+                            println!("0-4: {:.2}%", best_result.zero_four_probability());
+                            println!("\n총 승리확률: {:.2}%", best_result.total_win_probability());
+                            println!("에이스결정전 예상 승리확률: {:.2}%", best_result.tiebreaker_win_probability());
+                        } else {
+                            println!("적합한 매치 결과를 찾을 수 없습니다.");
+                        }
+                        println!("========================");
+
+
+                        println!("\n계속하려면 엔터를 누르세요.");
+                        let mut pause = String::new();
+                        io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
+                    },
+                    "10" => {
                         let team1_combination = utils::select_team_combination(&selected_teams[0]);
                         let team2_combination = utils::select_team_combination(&selected_teams[1]);
 
@@ -911,8 +1020,8 @@ fn main() {
                         for &outcome in outcomes.iter() {
                             let defeated_players: Vec<&Player> = outcome.chars().enumerate().map(|(i, result)| {
                                 match result {
-                                    'W' => team2_combination[i], // 승리는 상대 팀의 선수가 패배
-                                    'L' => team1_combination[i], // 패배는 자신의 팀의 선수가 패배
+                                    'W' => team2_combination[i], // 승리는 상대 팀의 기사가 패배
+                                    'L' => team1_combination[i], // 패배는 자신의 팀의 기사가 패배
                                     _ => unreachable!(),
                                 }
                             }).collect();

@@ -262,6 +262,8 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
     )
 }
 
+
+
 pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>, match_results_matrix: Vec<Vec<MatchResult>>) -> Result<(), Box<dyn std::error::Error>> {
     let workbook = Workbook::new("player_relativities.xlsx")?;
     let mut worksheet_elo = workbook.add_worksheet(Some("개인-기본ELO 기반"))?;
@@ -332,8 +334,8 @@ pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>
     }
 
     let mut worksheet_total_win = workbook.add_worksheet(Some("팀-최종승리"))?;
-    let mut worksheet_win = workbook.add_worksheet(Some("팀-에결없이 승리"))?;
-    let mut worksheet_perfect_win = workbook.add_worksheet(Some("팀-완봉승"))?;
+    let mut worksheet_three_one = workbook.add_worksheet(Some("팀-에결없이 승리"))?;
+    let mut worksheet_four_zero = workbook.add_worksheet(Some("팀-완봉승"))?;
     let mut worksheet_tiebreak = workbook.add_worksheet(Some("팀-에결진출"))?;
 
     for (row_index, row) in match_results_matrix.iter().enumerate() {
@@ -345,8 +347,8 @@ pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>
                     match_result.forth_blitz().player2().korean_name(), 
                     match_result.first_rapid().player2().korean_name());
                 worksheet_total_win.write_string(0, col_index as u16 + 1, &lineup_names, None)?;
-                worksheet_win.write_string(0, col_index as u16 + 1, &lineup_names, None)?;
-                worksheet_perfect_win.write_string(0, col_index as u16 + 1, &lineup_names, None)?;
+                worksheet_three_one.write_string(0, col_index as u16 + 1, &lineup_names, None)?;
+                worksheet_four_zero.write_string(0, col_index as u16 + 1, &lineup_names, None)?;
                 worksheet_tiebreak.write_string(0, col_index as u16 + 1, &lineup_names, None)?;
             }
         }
@@ -357,20 +359,20 @@ pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>
             row[0].forth_blitz().player1().korean_name(), 
             row[0].first_rapid().player1().korean_name());
         worksheet_total_win.write_string(row_index as u32 + 1, 0, &lineup_names, None)?;
-        worksheet_win.write_string(row_index as u32 + 1, 0, &lineup_names, None)?;
-        worksheet_perfect_win.write_string(row_index as u32 + 1, 0, &lineup_names, None)?;
+        worksheet_three_one.write_string(row_index as u32 + 1, 0, &lineup_names, None)?;
+        worksheet_four_zero.write_string(row_index as u32 + 1, 0, &lineup_names, None)?;
         worksheet_tiebreak.write_string(row_index as u32 + 1, 0, &lineup_names, None)?;
 
         for (col_index, match_result) in row.iter().enumerate().take(36) {
             let total_win_format = create_custom_format(match_result.total_win_probability(), 25.0)?;
-            let win_format = create_custom_format(match_result.perfect_win_probability() + match_result.win_probability(), 25.0)?;
-            let perfect_win_format = create_custom_format(match_result.perfect_win_probability(), 25.0)?;
-            let tiebreaker_format = create_custom_format(match_result.tie_probability(), 25.0)?;
+            let win_format = create_custom_format(match_result.four_zero_probability() + match_result.three_one_probability(), 25.0)?;
+            let four_zero_format = create_custom_format(match_result.four_zero_probability(), 25.0)?;
+            let tiebreaker_format = create_custom_format(match_result.two_two_probability(), 25.0)?;
 
             worksheet_total_win.write_number(row_index as u32 + 1, col_index as u16 + 1, match_result.total_win_probability() / 100.0, Some(&total_win_format))?;
-            worksheet_win.write_number(row_index as u32 + 1, col_index as u16 + 1, (match_result.perfect_win_probability() + match_result.win_probability()) / 100.0, Some(&win_format))?;
-            worksheet_perfect_win.write_number(row_index as u32 + 1, col_index as u16 + 1, match_result.perfect_win_probability() / 100.0, Some(&perfect_win_format))?;
-            worksheet_tiebreak.write_number(row_index as u32 + 1, col_index as u16 + 1, match_result.tie_probability() / 100.0, Some(&tiebreaker_format))?;
+            worksheet_three_one.write_number(row_index as u32 + 1, col_index as u16 + 1, (match_result.four_zero_probability() + match_result.three_one_probability()) / 100.0, Some(&win_format))?;
+            worksheet_four_zero.write_number(row_index as u32 + 1, col_index as u16 + 1, match_result.four_zero_probability() / 100.0, Some(&four_zero_format))?;
+            worksheet_tiebreak.write_number(row_index as u32 + 1, col_index as u16 + 1, match_result.two_two_probability() / 100.0, Some(&tiebreaker_format))?;
         }
     }
 
@@ -497,4 +499,43 @@ pub fn select_team_combination(team: &Team) -> Vec<&Player> {
         }
     }
     team_combination
+}
+
+pub fn filter_team1_lineups(selected_teams: &[Team], team1_all_lineups: &[Lineup]) -> Vec<Lineup> {
+    let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), 0.0, 0.0, 0.0, 0.0, 0.0);
+
+    let mut team1_combination: Vec<&Player> = Vec::new();
+    println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name());
+    println!("특정 기사에게 고정포지션이 있다면 선택해주세요. 없다면 알 수 없음을 선택해주세요.");
+    let mut last_index = 0;
+    for (index, player) in selected_teams[0].players().iter().enumerate() {
+        println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name(), player.elo_rating(), player.condition_weight(), player.rapid_weight(), player.blitz_weight(), player.bullet_weight());
+        last_index = index;
+    }
+    println!("{}. 알 수 없음", last_index + 2);
+    for i in 0..4 {
+        loop {
+            let mut input = String::new();
+            println!("\n{} 팀의 {}국 {} 기사 번호를 입력하세요:", selected_teams[0].team_name(), i + 1, if i == 0 { "장고(rapid)" } else { "속기(blitz)" });
+            io::stdin().read_line(&mut input).expect("입력을 읽는 데 실패했습니다.");
+            match input.trim().parse::<usize>() {
+                Ok(num) if num > 0 && num <= selected_teams[0].players().len() => {
+                    team1_combination.push(&selected_teams[0].players()[num - 1]);
+                    break;
+                },
+                Ok(num) if num == selected_teams[0].players().len() + 1 => {
+                    team1_combination.push(&unknown_player);
+                    break;
+                },
+                _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
+            }
+        }
+    }
+
+    team1_all_lineups.iter().filter(|lineup| {
+        (team1_combination[0].english_name() == "unknown" || lineup.first_rapid().korean_name() == team1_combination[0].korean_name()) &&
+        (team1_combination[1].english_name() == "unknown" || lineup.second_blitz().korean_name() == team1_combination[1].korean_name()) &&
+        (team1_combination[2].english_name() == "unknown" || lineup.third_blitz().korean_name() == team1_combination[2].korean_name()) &&
+        (team1_combination[3].english_name() == "unknown" || lineup.forth_blitz().korean_name() == team1_combination[3].korean_name())
+    }).cloned().collect()
 }

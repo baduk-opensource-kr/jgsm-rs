@@ -1,7 +1,9 @@
 use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team};
 use chrono::Datelike;
+use fantoccini::{Client, Locator};
 use itertools::Itertools;
 use reqwest;
+use rpassword::read_password;
 use scraper::{Html, Selector};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
@@ -261,8 +263,6 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
         total_win_probability * 100.0,
     )
 }
-
-
 
 pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>, match_results_matrix: Vec<Vec<MatchResult>>) -> Result<(), Box<dyn std::error::Error>> {
     let workbook = Workbook::new("player_relativities.xlsx")?;
@@ -538,4 +538,113 @@ pub fn filter_team1_lineups(selected_teams: &[Team], team1_all_lineups: &[Lineup
         (team1_combination[2].english_name() == "unknown" || lineup.third_blitz().korean_name() == team1_combination[2].korean_name()) &&
         (team1_combination[3].english_name() == "unknown" || lineup.forth_blitz().korean_name() == team1_combination[3].korean_name())
     }).cloned().collect()
+}
+
+pub async fn live_win_ratings(match_result: MatchResult) {
+    let c = Client::new("http://127.0.0.1:4444").await.expect("WebDriver에 연결하지 못했습니다.");
+    c.goto("https://www.cyberoro.com/bcast/live.oro").await.expect("cyberoro에 연결하지 못했습니다.");
+
+    let id_selector = "td#login_area2 > input.input_text2[name=id]";
+    let pass_selector = "td#login_area2 > input.input_text2[name=pass]";
+    let button_selector = "input[type=image][src='/images/main/bt_login.png']";
+    
+    let mut id_value = String::new();
+    println!("사이버오로의 아이디를 입력하세요:");
+    io::stdin().read_line(&mut id_value).expect("입력을 읽는 데 실패했습니다.");
+    let id_value = id_value.trim();
+
+    println!("사이버오로의 비밀번호를 입력하세요:");
+    let pass_value = read_password().expect("입력을 읽는 데 실패했습니다.").trim().to_string();
+
+    let id_field = c.wait().for_element(Locator::Css(id_selector)).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
+    id_field.send_keys(id_value).await.expect("입력을 설정하는 데 실패했습니다.");
+    let pass_field = c.wait().for_element(Locator::Css(pass_selector)).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
+    pass_field.send_keys(&pass_value).await.expect("입력을 설정하는 데 실패했습니다.");
+    let button_field = c.wait().for_element(Locator::Css(button_selector)).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
+    button_field.click().await.expect("로그인 버튼을 클릭하는 데 실패했습니다.");
+
+    for i in 0..4 {
+        let new_window_response = c.new_window(true).await.expect("새 탭을 열지 못했습니다.");
+        let new_tab_handle = new_window_response.handle;
+        c.switch_to_window(new_tab_handle.clone()).await.expect("탭으로 전환하는 데 실패했습니다.");
+
+        c.goto("https://www.cyberoro.com/gibo_new/live_list/list.asp?f_live_cnt=100").await.expect("cyberoro에 연결하지 못했습니다.");
+        c.wait().for_element(Locator::Css("div.no")).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
+        let matches = c.find_all(Locator::Css("div.no")).await.expect("div.no 요소를 찾는 중 오류가 발생했습니다.");
+        let name1 = match i {
+            0 => match_result.first_rapid().player1().korean_name(),
+            1 => match_result.second_blitz().player1().korean_name(),
+            2 => match_result.third_blitz().player1().korean_name(),
+            3 => match_result.forth_blitz().player1().korean_name(),
+            _ => unreachable!(),
+        };
+        let name2 = match i {
+            0 => match_result.first_rapid().player2().korean_name(),
+            1 => match_result.second_blitz().player2().korean_name(),
+            2 => match_result.third_blitz().player2().korean_name(),
+            3 => match_result.forth_blitz().player2().korean_name(),
+            _ => unreachable!(),
+        };
+        for match_element in matches {
+            let text = match_element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+            if text.contains(name1) && text.contains(name2) {
+                match_element.click().await.expect("클릭하는 중 오류가 발생했습니다.");
+                break;
+            }
+        }
+    }
+
+    for i in 0..4 {
+        let name1 = match i {
+            0 => match_result.first_rapid().player1().korean_name(),
+            1 => match_result.second_blitz().player1().korean_name(),
+            2 => match_result.third_blitz().player1().korean_name(),
+            3 => match_result.forth_blitz().player1().korean_name(),
+            _ => unreachable!(),
+        };
+        let name2 = match i {
+            0 => match_result.first_rapid().player2().korean_name(),
+            1 => match_result.second_blitz().player2().korean_name(),
+            2 => match_result.third_blitz().player2().korean_name(),
+            3 => match_result.forth_blitz().player2().korean_name(),
+            _ => unreachable!(),
+        };
+
+        let current_handles = c.windows().await.expect("창 핸들을 가져오는 데 실패했습니다.");
+        for handle in current_handles {
+            c.switch_to_window(handle.clone()).await.expect("탭으로 전환하는 데 실패했습니다.");
+            // 먼저 #board의 존재 여부를 확인합니다.
+            if c.find(Locator::Css("#board")).await.is_ok() {
+                // #board가 존재하면, #MInfo 요소 내의 텍스트에 name이 포함되어 있는지 확인합니다.
+                if let Ok(m_info_element) = c.find(Locator::Css("#MInfo")).await {
+                    let text = m_info_element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                    if text.contains(name1) && text.contains(name2) {
+                        // #nowSN: 수순
+                        // #wdied: 백 사석 갯수
+                        // #bdied: 흑 사석 갯수
+                        // #ai_bwin: 흑 승리확률
+                        // #ai_wwin: 백 승리확률
+                        // #ai_title > font: 집차이
+
+                        // A=엘로 승리확률
+                        // B=name1이 "#BPlayer"에 있을 경우 "#ai_bwin", name1이 "#WPlayer"에 있을 경우 "#ai_wwin"
+                        // C="#ai_title > font"의 절대값
+                        // D="#nowSN" - "#wdied" - "#bdied"
+
+                        // (A + B * ((C / (4 - (((D * 0.0175) > 3.999 ? 3.999 : (D * 0.0175))))) + 1))/((C / (4 - (((D * 0.0175) > 3.999 ? 3.999 : (D * 0.0175))))) + 2)
+                        // (A + B * (C / (4 - (((D * 0.0175) > 3.999 ? 3.999 : (D * 0.0175))))))/((C / (4 - (((D * 0.0175) > 3.999 ? 3.999 : (D * 0.0175))))) + 1)
+                        // 이 두가지 버전을 테스트해봐야함.
+
+                        println!("{}와 {}의 경기를 찾았습니다.", name1, name2);
+                    }
+                }
+            }
+        }
+    }
+
+    println!("\nWebDriver를 닫으려면 엔터를 누르세요.");
+    let mut pause = String::new();
+    io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
+
+    c.close().await.expect("WebDriver를 닫는 데 실패했습니다.");
 }

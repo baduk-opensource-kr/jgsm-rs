@@ -5,6 +5,8 @@ use chrono::Datelike;
 use models::{Lineup, MatchResult, Player, PlayerRelativity, Team};
 use std::collections::HashMap;
 use std::io::{self, Write};
+use tokio;
+
 
 fn main() {
     let mut teams: Vec<Team> = Vec::new();
@@ -304,17 +306,18 @@ fn main() {
                 println!("1. {}의 스쿼드", selected_teams[0].team_name());
                 println!("2. {}의 스쿼드", selected_teams[1].team_name());
                 println!("3. 양팀의 라인업 메트릭스를 Excel로 출력\n");
-                println!("4. 지정 라인업 승리확률\n");
-                println!("5. {} 최고 평균승률 라인업", selected_teams[0].team_name());
-                println!("6. {} 베스트24 라인업에 대한 {} 최고 평균승률 라인업", selected_teams[1].team_name(), selected_teams[0].team_name());
-                println!("7. {} 미니맥스 라인업(최선 + 상대 카운터픽)", selected_teams[0].team_name());
-                println!("8. {} 예상라인업에 대한 {} 카운터픽(최고평균)", selected_teams[1].team_name(), selected_teams[0].team_name());
-                println!("9. {} 예상라인업에 대한 {} 카운터픽(미니맥스)\n", selected_teams[1].team_name(), selected_teams[0].team_name());
+                println!("4. {} 최고 평균승률 라인업", selected_teams[0].team_name());
+                println!("5. {} 베스트24 라인업에 대한 {} 최고 평균승률 라인업", selected_teams[1].team_name(), selected_teams[0].team_name());
+                println!("6. {} 미니맥스 라인업(최선 + 상대 카운터픽)", selected_teams[0].team_name());
+                println!("7. {} 예상라인업에 대한 {} 카운터픽(최고평균)", selected_teams[1].team_name(), selected_teams[0].team_name());
+                println!("8. {} 예상라인업에 대한 {} 카운터픽(미니맥스)\n", selected_teams[1].team_name(), selected_teams[0].team_name());
 
-                println!("10. 에이스 결정전 Excel로 출력\n");
+                println!("9. 지정 라인업 승리확률");
+                println!("10. 에이스 결정전 Excel로 출력");
+                println!("11. 실시간 팀 승률\n");
 
-                println!("11. 포스트시즌: {} 5인에 대한 {} 카운터픽(개발중..)", selected_teams[1].team_name(), selected_teams[0].team_name());
-                println!("12. 포스트시즌: 5판 3선승제 3-1-1 순서 오더 실시간 최선의 라인업(개발중..)\n");
+                println!("12. 포스트시즌: {} 5인에 대한 {} 카운터픽(개발중..)", selected_teams[1].team_name(), selected_teams[0].team_name());
+                println!("13. 포스트시즌: 5판 3선승제 3-1-1 순서 오더 실시간 최선의 라인업(개발중..)\n");
                 println!("exit. 종료");
 
                 let mut option = String::new();
@@ -341,39 +344,6 @@ fn main() {
                         }
                     },
                     "4" => {
-                        let team1_combination = utils::select_team_combination(&selected_teams[0]);
-                        let team2_combination = utils::select_team_combination(&selected_teams[1]);
-
-                        let match_result = match_results_matrix.iter().flatten().find(|&result| {
-                            result.first_rapid().player1().korean_name() == team1_combination[0].korean_name() && 
-                            result.second_blitz().player1().korean_name() == team1_combination[1].korean_name() && 
-                            result.third_blitz().player1().korean_name() == team1_combination[2].korean_name() && 
-                            result.forth_blitz().player1().korean_name() == team1_combination[3].korean_name() && 
-                            result.first_rapid().player2().korean_name() == team2_combination[0].korean_name() && 
-                            result.second_blitz().player2().korean_name() == team2_combination[1].korean_name() && 
-                            result.third_blitz().player2().korean_name() == team2_combination[2].korean_name() && 
-                            result.forth_blitz().player2().korean_name() == team2_combination[3].korean_name()
-                        }).expect("매치 결과를 찾을 수 없습니다.");
-
-                        println!("========================");
-                        println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[0].korean_name(), team2_combination[0].korean_name(), chrono::Utc::now().year() - 1, match_result.first_rapid().player1_wins(), match_result.first_rapid().player2_wins(), match_result.first_rapid_win_probability());
-                        println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[1].korean_name(), team2_combination[1].korean_name(), chrono::Utc::now().year() - 1, match_result.second_blitz().player1_wins(), match_result.second_blitz().player2_wins(), match_result.second_blitz_win_probability());
-                        println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[2].korean_name(), team2_combination[2].korean_name(), chrono::Utc::now().year() - 1, match_result.third_blitz().player1_wins(), match_result.third_blitz().player2_wins(), match_result.third_blitz_win_probability());
-                        println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[3].korean_name(), team2_combination[3].korean_name(), chrono::Utc::now().year() - 1, match_result.forth_blitz().player1_wins(), match_result.forth_blitz().player2_wins(), match_result.forth_blitz_win_probability());
-                        println!("\n4-0: {:.2}%", match_result.four_zero_probability());
-                        println!("3-1: {:.2}%", match_result.three_one_probability());
-                        println!("2-2: {:.2}%", match_result.two_two_probability());
-                        println!("1-3: {:.2}%", match_result.one_three_probability());
-                        println!("0-4: {:.2}%", match_result.zero_four_probability());
-                        println!("\n총 승리확률: {:.2}%", match_result.total_win_probability());
-                        println!("에이스결정전 예상 승리확률: {:.2}%", match_result.tiebreaker_win_probability());
-                        println!("========================");
-
-                        println!("\n계속하려면 엔터를 누르세요.");
-                        let mut pause = String::new();
-                        io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
-                    },
-                    "5" => {
                         let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
 
                         let mut avg_probabilities: Vec<(Lineup, f64, f64, f64, f64, f64, f64, f64, f64)> = Vec::new();
@@ -519,7 +489,7 @@ fn main() {
                         let mut pause = String::new();
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
-                    "6" => {
+                    "5" => {
                         let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
 
                         let mut avg_probabilities: Vec<(Lineup, f64, f64, f64, f64, f64, f64, f64, f64)> = Vec::new();
@@ -667,7 +637,7 @@ fn main() {
                         let mut pause = String::new();
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
-                    "7" => {
+                    "6" => {
                         let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
 
                         let mut best_match_result: Option<&MatchResult> = None;
@@ -724,7 +694,7 @@ fn main() {
                         let mut pause = String::new();
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
-                    "8" => {
+                    "7" => {
                         let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
 
                         let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -914,7 +884,7 @@ fn main() {
                         let mut pause = String::new();
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
-                    "9" => {
+                    "8" => {
                         let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
 
                         let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -1010,6 +980,39 @@ fn main() {
                         let mut pause = String::new();
                         io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
+                    "9" => {
+                        let team1_combination = utils::select_team_combination(&selected_teams[0]);
+                        let team2_combination = utils::select_team_combination(&selected_teams[1]);
+
+                        let match_result = match_results_matrix.iter().flatten().find(|&result| {
+                            result.first_rapid().player1().korean_name() == team1_combination[0].korean_name() && 
+                            result.second_blitz().player1().korean_name() == team1_combination[1].korean_name() && 
+                            result.third_blitz().player1().korean_name() == team1_combination[2].korean_name() && 
+                            result.forth_blitz().player1().korean_name() == team1_combination[3].korean_name() && 
+                            result.first_rapid().player2().korean_name() == team2_combination[0].korean_name() && 
+                            result.second_blitz().player2().korean_name() == team2_combination[1].korean_name() && 
+                            result.third_blitz().player2().korean_name() == team2_combination[2].korean_name() && 
+                            result.forth_blitz().player2().korean_name() == team2_combination[3].korean_name()
+                        }).expect("매치 결과를 찾을 수 없습니다.");
+
+                        println!("========================");
+                        println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[0].korean_name(), team2_combination[0].korean_name(), chrono::Utc::now().year() - 1, match_result.first_rapid().player1_wins(), match_result.first_rapid().player2_wins(), match_result.first_rapid_win_probability());
+                        println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[1].korean_name(), team2_combination[1].korean_name(), chrono::Utc::now().year() - 1, match_result.second_blitz().player1_wins(), match_result.second_blitz().player2_wins(), match_result.second_blitz_win_probability());
+                        println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[2].korean_name(), team2_combination[2].korean_name(), chrono::Utc::now().year() - 1, match_result.third_blitz().player1_wins(), match_result.third_blitz().player2_wins(), match_result.third_blitz_win_probability());
+                        println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[3].korean_name(), team2_combination[3].korean_name(), chrono::Utc::now().year() - 1, match_result.forth_blitz().player1_wins(), match_result.forth_blitz().player2_wins(), match_result.forth_blitz_win_probability());
+                        println!("\n4-0: {:.2}%", match_result.four_zero_probability());
+                        println!("3-1: {:.2}%", match_result.three_one_probability());
+                        println!("2-2: {:.2}%", match_result.two_two_probability());
+                        println!("1-3: {:.2}%", match_result.one_three_probability());
+                        println!("0-4: {:.2}%", match_result.zero_four_probability());
+                        println!("\n총 승리확률: {:.2}%", match_result.total_win_probability());
+                        println!("에이스결정전 예상 승리확률: {:.2}%", match_result.tiebreaker_win_probability());
+                        println!("========================");
+
+                        println!("\n계속하려면 엔터를 누르세요.");
+                        let mut pause = String::new();
+                        io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
+                    },
                     "10" => {
                         let team1_combination = utils::select_team_combination(&selected_teams[0]);
                         let team2_combination = utils::select_team_combination(&selected_teams[1]);
@@ -1082,6 +1085,48 @@ fn main() {
                             Ok(_) => println!("Excel 파일이 성공적으로 생성되었습니다."),
                             Err(e) => println!("Excel 파일 생성 중 오류가 발생했습니다: {}", e),
                         }
+                    },
+                    "11" => {
+                        let team1_combination = utils::select_team_combination(&selected_teams[0]);
+                        let team2_combination = utils::select_team_combination(&selected_teams[1]);
+
+                        let match_result = match_results_matrix.iter().flatten().find(|&result| {
+                            result.first_rapid().player1().korean_name() == team1_combination[0].korean_name() && 
+                            result.second_blitz().player1().korean_name() == team1_combination[1].korean_name() && 
+                            result.third_blitz().player1().korean_name() == team1_combination[2].korean_name() && 
+                            result.forth_blitz().player1().korean_name() == team1_combination[3].korean_name() && 
+                            result.first_rapid().player2().korean_name() == team2_combination[0].korean_name() && 
+                            result.second_blitz().player2().korean_name() == team2_combination[1].korean_name() && 
+                            result.third_blitz().player2().korean_name() == team2_combination[2].korean_name() && 
+                            result.forth_blitz().player2().korean_name() == team2_combination[3].korean_name()
+                        }).expect("매치 결과를 찾을 수 없습니다.");
+
+                        let rt = tokio::runtime::Builder::new_multi_thread()
+                            .enable_all()
+                            .build()
+                            .unwrap();
+
+                        rt.block_on(async {
+                            utils::live_win_ratings(match_result.clone()).await;
+                        });
+
+                        // println!("========================");
+                        // println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[0].korean_name(), team2_combination[0].korean_name(), chrono::Utc::now().year() - 1, match_result.first_rapid().player1_wins(), match_result.first_rapid().player2_wins(), match_result.first_rapid_win_probability());
+                        // println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[1].korean_name(), team2_combination[1].korean_name(), chrono::Utc::now().year() - 1, match_result.second_blitz().player1_wins(), match_result.second_blitz().player2_wins(), match_result.second_blitz_win_probability());
+                        // println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[2].korean_name(), team2_combination[2].korean_name(), chrono::Utc::now().year() - 1, match_result.third_blitz().player1_wins(), match_result.third_blitz().player2_wins(), match_result.third_blitz_win_probability());
+                        // println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", team1_combination[3].korean_name(), team2_combination[3].korean_name(), chrono::Utc::now().year() - 1, match_result.forth_blitz().player1_wins(), match_result.forth_blitz().player2_wins(), match_result.forth_blitz_win_probability());
+                        // println!("\n4-0: {:.2}%", match_result.four_zero_probability());
+                        // println!("3-1: {:.2}%", match_result.three_one_probability());
+                        // println!("2-2: {:.2}%", match_result.two_two_probability());
+                        // println!("1-3: {:.2}%", match_result.one_three_probability());
+                        // println!("0-4: {:.2}%", match_result.zero_four_probability());
+                        // println!("\n총 승리확률: {:.2}%", match_result.total_win_probability());
+                        // println!("에이스결정전 예상 승리확률: {:.2}%", match_result.tiebreaker_win_probability());
+                        // println!("========================");
+
+                        // println!("\n계속하려면 엔터를 누르세요.");
+                        // let mut pause = String::new();
+                        // io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
                     "exit" => break,
                     _ => println!("잘못된 입력입니다. 다시 입력해주세요."),

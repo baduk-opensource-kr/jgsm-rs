@@ -1,4 +1,10 @@
 use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team};
+use crossterm::{
+    execute,
+    terminal::{Clear, ClearType},
+    cursor::{MoveTo, SavePosition},
+    style::Print,
+};
 use chrono::Datelike;
 use fantoccini::{Client, Locator};
 use itertools::Itertools;
@@ -8,6 +14,7 @@ use scraper::{Html, Selector};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::io;
+use std::io::stdout;
 use xlsxwriter::format::FormatColor;
 use xlsxwriter::prelude::Workbook;
 use xlsxwriter::Format;
@@ -609,6 +616,8 @@ pub async fn live_win_ratings(match_result: MatchResult) {
     println!("========================");
 
     let mut live_match_result = match_result.clone();
+    let mut stdout = stdout();
+    execute!(stdout, SavePosition, Clear(ClearType::All)).expect("화면을 지우는 데 실패했습니다.");
 
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
@@ -772,17 +781,6 @@ pub async fn live_win_ratings(match_result: MatchResult) {
             }
 
             if i == 3 {
-                println!("========================");
-                println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.first_rapid().player1().korean_name(), live_match_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.first_rapid().player1_wins(), live_match_result.first_rapid().player2_wins(), live_match_result.first_rapid_win_probability());
-                println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.second_blitz().player1().korean_name(), live_match_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.second_blitz().player1_wins(), live_match_result.second_blitz().player2_wins(), live_match_result.second_blitz_win_probability());
-                println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.third_blitz().player1().korean_name(), live_match_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.third_blitz().player1_wins(), live_match_result.third_blitz().player2_wins(), live_match_result.third_blitz_win_probability());
-                println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.forth_blitz().player1().korean_name(), live_match_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.forth_blitz().player1_wins(), live_match_result.forth_blitz().player2_wins(), live_match_result.forth_blitz_win_probability());
-                println!("\n4-0: {:.2}%", live_match_result.four_zero_probability());
-                println!("3-1: {:.2}%", live_match_result.three_one_probability());
-                println!("2-2: {:.2}%", live_match_result.two_two_probability());
-                println!("1-3: {:.2}%", live_match_result.one_three_probability());
-                println!("0-4: {:.2}%", live_match_result.zero_four_probability());
-                println!("\n총 승리확률: {:.2}%", live_match_result.total_win_probability());
                 let four_zero = live_match_result.four_zero_probability() / 10.0;
                 let three_one = live_match_result.three_one_probability() / 10.0;
                 let two_two = live_match_result.two_two_probability() / 10.0;
@@ -790,8 +788,36 @@ pub async fn live_win_ratings(match_result: MatchResult) {
                 let zero_four = live_match_result.zero_four_probability() / 10.0;
                 let team1_score = 4.0 * four_zero + 3.0 * three_one + 2.0 * two_two + 1.0 * one_three;
                 let team2_score = 1.0 * three_one + 2.0 * two_two + 3.0 * one_three + 4.0 * zero_four;
-                println!("\n현재 스코어: {:.0}-{:.0}", team1_score, team2_score);
-                println!("========================");
+                let output = format!(
+                    "========================\n\
+                    1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+                    2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+                    3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+                    4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+                    \n4-0: {:.2}%\n\
+                    3-1: {:.2}%\n\
+                    2-2: {:.2}%\n\
+                    1-3: {:.2}%\n\
+                    0-4: {:.2}%\n\
+                    \n총 승리확률: {:.2}%\n\
+                    \n현재 스코어: {:.0}-{:.0}\n\
+                    ========================",
+                    live_match_result.first_rapid().player1().korean_name(), live_match_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.first_rapid().player1_wins(), live_match_result.first_rapid().player2_wins(), live_match_result.first_rapid_win_probability(),
+                    live_match_result.second_blitz().player1().korean_name(), live_match_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.second_blitz().player1_wins(), live_match_result.second_blitz().player2_wins(), live_match_result.second_blitz_win_probability(),
+                    live_match_result.third_blitz().player1().korean_name(), live_match_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.third_blitz().player1_wins(), live_match_result.third_blitz().player2_wins(), live_match_result.third_blitz_win_probability(),
+                    live_match_result.forth_blitz().player1().korean_name(), live_match_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.forth_blitz().player1_wins(), live_match_result.forth_blitz().player2_wins(), live_match_result.forth_blitz_win_probability(),
+                    live_match_result.four_zero_probability(),
+                    live_match_result.three_one_probability(),
+                    live_match_result.two_two_probability(),
+                    live_match_result.one_three_probability(),
+                    live_match_result.zero_four_probability(),
+                    live_match_result.total_win_probability(),
+                    team1_score, team2_score
+                );
+                execute!(stdout, MoveTo(0, 0)).expect("커서를 이동하는 데 실패했습니다.");
+                execute!(stdout, Print(" ".repeat(2000))).expect("화면을 클리어하는 데 실패했습니다."); // 화면 크기에 따라 공백의 수를 조절해야 할 수 있습니다.
+                execute!(stdout, MoveTo(0, 0)).expect("커서를 이동하는 데 실패했습니다.");
+                execute!(stdout, Print(output)).expect("텍스트를 출력하는 데 실패했습니다.");
             }
         }
     }

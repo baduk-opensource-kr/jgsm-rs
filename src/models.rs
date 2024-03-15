@@ -336,6 +336,45 @@ impl MatchResult {
     pub fn total_win_probability(&self) -> f64 {
         self.total_win_probability
     }
+    pub fn set_first_rapid_win_probability(&mut self, value: f64) {
+        self.first_rapid_win_probability = value;
+    }
+
+    pub fn set_second_blitz_win_probability(&mut self, value: f64) {
+        self.second_blitz_win_probability = value;
+    }
+
+    pub fn set_third_blitz_win_probability(&mut self, value: f64) {
+        self.third_blitz_win_probability = value;
+    }
+
+    pub fn set_forth_blitz_win_probability(&mut self, value: f64) {
+        self.forth_blitz_win_probability = value;
+    }
+
+    pub fn set_four_zero_probability(&mut self, value: f64) {
+        self.four_zero_probability = value;
+    }
+
+    pub fn set_three_one_probability(&mut self, value: f64) {
+        self.three_one_probability = value;
+    }
+
+    pub fn set_two_two_probability(&mut self, value: f64) {
+        self.two_two_probability = value;
+    }
+
+    pub fn set_one_three_probability(&mut self, value: f64) {
+        self.one_three_probability = value;
+    }
+
+    pub fn set_zero_four_probability(&mut self, value: f64) {
+        self.zero_four_probability = value;
+    }
+
+    pub fn set_total_win_probability(&mut self, value: f64) {
+        self.total_win_probability = value;
+    }
 }
 
 // #[derive(Clone)]

@@ -766,24 +766,32 @@ pub async fn live_win_ratings(match_result: MatchResult) {
                             live_match_result.set_one_three_probability(one_win_three_lose_probability * 100.0);
                             live_match_result.set_zero_four_probability(all_lose_probability * 100.0);
                             live_match_result.set_total_win_probability(total_win_probability * 100.0);
-
-                            if i == 4 {
-                                println!("========================");
-                                println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.first_rapid().player1().korean_name(), live_match_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.first_rapid().player1_wins(), live_match_result.first_rapid().player2_wins(), live_match_result.first_rapid_win_probability());
-                                println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.second_blitz().player1().korean_name(), live_match_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.second_blitz().player1_wins(), live_match_result.second_blitz().player2_wins(), live_match_result.second_blitz_win_probability());
-                                println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.third_blitz().player1().korean_name(), live_match_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.third_blitz().player1_wins(), live_match_result.third_blitz().player2_wins(), live_match_result.third_blitz_win_probability());
-                                println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.forth_blitz().player1().korean_name(), live_match_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.forth_blitz().player1_wins(), live_match_result.forth_blitz().player2_wins(), live_match_result.forth_blitz_win_probability());
-                                println!("\n4-0: {:.2}%", live_match_result.four_zero_probability());
-                                println!("3-1: {:.2}%", live_match_result.three_one_probability());
-                                println!("2-2: {:.2}%", live_match_result.two_two_probability());
-                                println!("1-3: {:.2}%", live_match_result.one_three_probability());
-                                println!("0-4: {:.2}%", live_match_result.zero_four_probability());
-                                println!("\n총 승리확률: {:.2}%", live_match_result.total_win_probability());
-                                println!("========================");
-                            }
                         }
                     }
                 }
+            }
+
+            if i == 3 {
+                println!("========================");
+                println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.first_rapid().player1().korean_name(), live_match_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.first_rapid().player1_wins(), live_match_result.first_rapid().player2_wins(), live_match_result.first_rapid_win_probability());
+                println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.second_blitz().player1().korean_name(), live_match_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.second_blitz().player1_wins(), live_match_result.second_blitz().player2_wins(), live_match_result.second_blitz_win_probability());
+                println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.third_blitz().player1().korean_name(), live_match_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.third_blitz().player1_wins(), live_match_result.third_blitz().player2_wins(), live_match_result.third_blitz_win_probability());
+                println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", live_match_result.forth_blitz().player1().korean_name(), live_match_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.forth_blitz().player1_wins(), live_match_result.forth_blitz().player2_wins(), live_match_result.forth_blitz_win_probability());
+                println!("\n4-0: {:.2}%", live_match_result.four_zero_probability());
+                println!("3-1: {:.2}%", live_match_result.three_one_probability());
+                println!("2-2: {:.2}%", live_match_result.two_two_probability());
+                println!("1-3: {:.2}%", live_match_result.one_three_probability());
+                println!("0-4: {:.2}%", live_match_result.zero_four_probability());
+                println!("\n총 승리확률: {:.2}%", live_match_result.total_win_probability());
+                let four_zero = live_match_result.four_zero_probability() / 10.0;
+                let three_one = live_match_result.three_one_probability() / 10.0;
+                let two_two = live_match_result.two_two_probability() / 10.0;
+                let one_three = live_match_result.one_three_probability() / 10.0;
+                let zero_four = live_match_result.zero_four_probability() / 10.0;
+                let team1_score = 4.0 * four_zero + 3.0 * three_one + 2.0 * two_two + 1.0 * one_three;
+                let team2_score = 1.0 * three_one + 2.0 * two_two + 3.0 * one_three + 4.0 * zero_four;
+                println!("\n현재 스코어: {:.0}-{:.0}", team1_score, team2_score);
+                println!("========================");
             }
         }
     }

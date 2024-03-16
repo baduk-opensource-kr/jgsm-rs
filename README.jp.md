@@ -9,7 +9,12 @@ KB囲碁リーグなどのチームゲームで勝敗を予測し、最善のオ
 
 # リリースを実行する（一般ユーザー向け）
 [release](https://github.com/baduk-opensource-kr/jgsm-rs/releases/latest).
-リンクをクリックして、実行ファイルをダウンロードすれば使用できます。
+
+[geckodriver](https://github.com/mozilla/geckodriver/releases).
+
+リアルタイムの勝敗予測を実行するためには、[geckodriver](https://github.com/mozilla/geckodriver/releases)をダウンロードして実行する必要があります。
+
+[release](https://github.com/baduk-opensource-kr/jgsm-rs/releases/latest)リンクをクリックすると、田忌賽馬の実行ファイルをインストールできます。
 
 # ソースコードをビルドして実行する（開発者）
 ```
@@ -28,6 +33,7 @@ cargo run
 - [x] カウンターピック免疫ラインアップの出力(カウンターピック：該当ラインアップの最も勝利確率が低いラインアップ、カウンターピックがかかった場合の最も勝利確率が高いラインアップ)
 - [x] 対戦チーム予想ラインアップのカウンターピックの出力
 - [x] エース決定戦予測勝率の出力
+- [x] リアルタイムチーム勝利予測の出力
 - [ ] ポストシーズンルールを適用したリアルタイムラインアップの出力
 - [ ] レジェンドリーグ、シニア囲碁リーグ、女子囲碁リーグ、中国甲級リーグ、農心杯のベストラインアップ及び勝利確率の出力
 

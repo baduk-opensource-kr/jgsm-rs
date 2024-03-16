@@ -2,6 +2,7 @@
 pub struct Player {
     korean_name: String,
     english_name: String,
+    chinese_name: String,
     elo_rating: f64,
     condition_weight: f64,
     rapid_weight: f64,
@@ -13,6 +14,7 @@ impl Player {
     pub fn new(
         korean_name: String,
         english_name: String,
+        chinese_name: String,
         elo_rating: f64,
         condition_weight: f64,
         rapid_weight: f64,
@@ -22,6 +24,7 @@ impl Player {
         Player {
             korean_name,
             english_name,
+            chinese_name,
             elo_rating,
             condition_weight,
             rapid_weight,
@@ -36,6 +39,10 @@ impl Player {
 
     pub fn english_name(&self) -> &String {
         &self.english_name
+    }
+
+    pub fn chinese_name(&self) -> &String {
+        &self.chinese_name
     }
 
     pub fn elo_rating(&self) -> f64 {

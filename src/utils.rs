@@ -9,7 +9,6 @@ use chrono::Datelike;
 use fantoccini::{Client, Locator};
 use itertools::Itertools;
 use reqwest;
-use rpassword::read_password;
 use scraper::{Html, Selector};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
@@ -346,7 +345,7 @@ pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>
     let mut worksheet_tiebreak = workbook.add_worksheet(Some("팀-에결진출"))?;
 
     for (row_index, row) in match_results_matrix.iter().enumerate() {
-        if row_index == 0 { // 첫 번째 행에 상대 팀 라인업 이름 쓰기
+        if row_index == 0 { 
             for (col_index, match_result) in row.iter().enumerate().take(24) {
                 let lineup_names = format!("1국:{}, 2국:{}, 3국:{}, 4국:{}", 
                     match_result.second_blitz().player2().korean_name(), 
@@ -359,7 +358,6 @@ pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>
                 worksheet_tiebreak.write_string(0, col_index as u16 + 1, &lineup_names, None)?;
             }
         }
-        // 첫 번째 열에 자신의 팀 라인업 이름 쓰기
         let lineup_names = format!("1국:{}, 2국:{}, 3국:{}, 4국:{}", 
             row[0].second_blitz().player1().korean_name(), 
             row[0].third_blitz().player1().korean_name(), 
@@ -509,7 +507,7 @@ pub fn select_team_combination(team: &Team) -> Vec<&Player> {
 }
 
 pub fn filter_team1_lineups(selected_teams: &[Team], team1_all_lineups: &[Lineup]) -> Vec<Lineup> {
-    let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), 0.0, 0.0, 0.0, 0.0, 0.0);
+    let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), 0.0, 0.0, 0.0, 0.0, 0.0);
 
     let mut team1_combination: Vec<&Player> = Vec::new();
     println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name());
@@ -549,71 +547,7 @@ pub fn filter_team1_lineups(selected_teams: &[Team], team1_all_lineups: &[Lineup
 
 pub async fn live_win_ratings(match_result: MatchResult) {
     let c = Client::new("http://127.0.0.1:4444").await.expect("WebDriver에 연결하지 못했습니다.");
-    c.goto("https://www.cyberoro.com/bcast/live.oro").await.expect("cyberoro에 연결하지 못했습니다.");
-
-    let id_selector = "td#login_area2 > input.input_text2[name=id]";
-    let pass_selector = "td#login_area2 > input.input_text2[name=pass]";
-    let button_selector = "input[type=image][src='/images/main/bt_login.png']";
-    
-    let mut id_value = String::new();
-    println!("사이버오로의 아이디를 입력하세요:");
-    io::stdin().read_line(&mut id_value).expect("입력을 읽는 데 실패했습니다.");
-    let id_value = id_value.trim();
-
-    println!("사이버오로의 비밀번호를 입력하세요:");
-    let pass_value = read_password().expect("입력을 읽는 데 실패했습니다.").trim().to_string();
-
-    let id_field = c.wait().for_element(Locator::Css(id_selector)).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
-    id_field.send_keys(id_value).await.expect("입력을 설정하는 데 실패했습니다.");
-    let pass_field = c.wait().for_element(Locator::Css(pass_selector)).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
-    pass_field.send_keys(&pass_value).await.expect("입력을 설정하는 데 실패했습니다.");
-    let button_field = c.wait().for_element(Locator::Css(button_selector)).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
-    button_field.click().await.expect("로그인 버튼을 클릭하는 데 실패했습니다.");
-
-    for i in 0..4 {
-        let new_window_response = c.new_window(true).await.expect("새 탭을 열지 못했습니다.");
-        let new_tab_handle = new_window_response.handle;
-        c.switch_to_window(new_tab_handle.clone()).await.expect("탭으로 전환하는 데 실패했습니다.");
-
-        c.goto("https://www.cyberoro.com/gibo_new/live_list/list.asp?f_live_cnt=100").await.expect("cyberoro에 연결하지 못했습니다.");
-        c.wait().for_element(Locator::Css("div.no")).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
-        let matches = c.find_all(Locator::Css("div.no")).await.expect("div.no 요소를 찾는 중 오류가 발생했습니다.");
-        let name1 = match i {
-            0 => match_result.first_rapid().player1().korean_name().split('(').next().unwrap_or_default().trim(),
-            1 => match_result.second_blitz().player1().korean_name().split('(').next().unwrap_or_default().trim(),
-            2 => match_result.third_blitz().player1().korean_name().split('(').next().unwrap_or_default().trim(),
-            3 => match_result.forth_blitz().player1().korean_name().split('(').next().unwrap_or_default().trim(),
-            _ => unreachable!(),
-        };
-        let name2 = match i {
-            0 => match_result.first_rapid().player2().korean_name().split('(').next().unwrap_or_default().trim(),
-            1 => match_result.second_blitz().player2().korean_name().split('(').next().unwrap_or_default().trim(),
-            2 => match_result.third_blitz().player2().korean_name().split('(').next().unwrap_or_default().trim(),
-            3 => match_result.forth_blitz().player2().korean_name().split('(').next().unwrap_or_default().trim(),
-            _ => unreachable!(),
-        };
-        for match_element in matches {
-            let text = match_element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-            if text.contains(name1) && text.contains(name2) {
-                match_element.click().await.expect("클릭하는 중 오류가 발생했습니다.");
-                break;
-            }
-        }
-    }
-
-    println!("========================");
-    println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", match_result.first_rapid().player1().korean_name(), match_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, match_result.first_rapid().player1_wins(), match_result.first_rapid().player2_wins(), match_result.first_rapid_win_probability());
-    println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", match_result.second_blitz().player1().korean_name(), match_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, match_result.second_blitz().player1_wins(), match_result.second_blitz().player2_wins(), match_result.second_blitz_win_probability());
-    println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", match_result.third_blitz().player1().korean_name(), match_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, match_result.third_blitz().player1_wins(), match_result.third_blitz().player2_wins(), match_result.third_blitz_win_probability());
-    println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", match_result.forth_blitz().player1().korean_name(), match_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, match_result.forth_blitz().player1_wins(), match_result.forth_blitz().player2_wins(), match_result.forth_blitz_win_probability());
-    println!("\n4-0: {:.2}%", match_result.four_zero_probability());
-    println!("3-1: {:.2}%", match_result.three_one_probability());
-    println!("2-2: {:.2}%", match_result.two_two_probability());
-    println!("1-3: {:.2}%", match_result.one_three_probability());
-    println!("0-4: {:.2}%", match_result.zero_four_probability());
-    println!("\n총 승리확률: {:.2}%", match_result.total_win_probability());
-    println!("에이스결정전 예상 승리확률: {:.2}%", match_result.tiebreaker_win_probability());
-    println!("========================");
+    c.goto("https://home.yikeweiqi.com/#/live").await.expect("yikeweiqi에 연결하지 못했습니다.");
 
     let mut live_match_result = match_result.clone();
     let mut stdout = stdout();
@@ -631,195 +565,169 @@ pub async fn live_win_ratings(match_result: MatchResult) {
             break 'outer;
         }
 
-        for i in 0..4 {
-            let name1 = match i {
-                0 => match_result.first_rapid().player1().korean_name().split('(').next().unwrap_or_default().trim(),
-                1 => match_result.second_blitz().player1().korean_name().split('(').next().unwrap_or_default().trim(),
-                2 => match_result.third_blitz().player1().korean_name().split('(').next().unwrap_or_default().trim(),
-                3 => match_result.forth_blitz().player1().korean_name().split('(').next().unwrap_or_default().trim(),
-                _ => unreachable!(),
-            };
-            let name2 = match i {
-                0 => match_result.first_rapid().player2().korean_name().split('(').next().unwrap_or_default().trim(),
-                1 => match_result.second_blitz().player2().korean_name().split('(').next().unwrap_or_default().trim(),
-                2 => match_result.third_blitz().player2().korean_name().split('(').next().unwrap_or_default().trim(),
-                3 => match_result.forth_blitz().player2().korean_name().split('(').next().unwrap_or_default().trim(),
-                _ => unreachable!(),
-            };
-            let current_elo_win_probability = match i {
-                0 => match_result.first_rapid_win_probability(),
-                1 => match_result.second_blitz_win_probability(),
-                2 => match_result.third_blitz_win_probability(),
-                3 => match_result.forth_blitz_win_probability(),
-                _ => unreachable!(),
-            };
+        c.wait().for_element(Locator::Css("span.overwrap.flex_item.center")).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
+        let matches = c.find_all(Locator::Css("div.livedtl_medium")).await.expect("div.livedtl_medium 요소를 찾는 중 오류가 발생했습니다.");
+        for match_element in matches {
+            let text = match_element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+            if text.contains("KB") {
+                let mut live_win_probability = 0.0;
+                let name1 = if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
+                    match_result.first_rapid().player1().chinese_name()
+                } else if text.contains(match_result.second_blitz().player1().chinese_name()) && text.contains(match_result.second_blitz().player2().chinese_name()) {
+                    match_result.second_blitz().player1().chinese_name()
+                } else if text.contains(match_result.third_blitz().player1().chinese_name()) && text.contains(match_result.third_blitz().player2().chinese_name()) {
+                    match_result.third_blitz().player1().chinese_name()
+                } else if text.contains(match_result.forth_blitz().player1().chinese_name()) && text.contains(match_result.forth_blitz().player2().chinese_name()) {
+                    match_result.forth_blitz().player1().chinese_name()
+                } else {
+                    "未知"
+                };
+                let b_player = match_element.find(Locator::Css("div.livedtl_first")).await.expect("div.livedtl_first 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                let w_player = match_element.find(Locator::Css("div.livedtl_third")).await.expect("div.livedtl_third 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                if match_element.find(Locator::Css("div.progress_bar_text_box")).await.is_ok() {
+                    let ai_title_font = match match_element.find(Locator::Css("span.overwrap.flex_item.center")).await {
+                        Ok(element) => {
+                            let ai_title_font_text = element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                            ai_title_font_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.")
+                        },
+                        Err(_) => 0.0,
+                    };
+                    let now_sn_text = match_element.find(Locator::Css("span.overwrap.flex_item:not(.center):not(.text_right)")).await.expect("span.overwrap.flex_item:not(.center):not(.text_right) 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                    let now_sn = now_sn_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
+                    let ai_bwin_text = match_element.find(Locator::Css("span.progress_bar_text.left")).await.expect("span.progress_bar_text.left 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                    let ai_bwin = ai_bwin_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
+                    let ai_wwin_text = match_element.find(Locator::Css("span.progress_bar_text.right")).await.expect("span.progress_bar_text.right 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                    let ai_wwin = ai_wwin_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
+                    let ai_win = if b_player.contains(name1) {
+                        ai_bwin
+                    } else if w_player.contains(name1) {
+                        ai_wwin
+                    } else {
+                        50.0
+                    };
+                    let current_elo_win_probability = if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
+                        match_result.first_rapid_win_probability()
+                    } else if text.contains(match_result.second_blitz().player1().chinese_name()) && text.contains(match_result.second_blitz().player2().chinese_name()) {
+                        match_result.second_blitz_win_probability()
+                    } else if text.contains(match_result.third_blitz().player1().chinese_name()) && text.contains(match_result.third_blitz().player2().chinese_name()) {
+                        match_result.third_blitz_win_probability()
+                    } else if text.contains(match_result.forth_blitz().player1().chinese_name()) && text.contains(match_result.forth_blitz().player2().chinese_name()) {
+                        match_result.forth_blitz_win_probability()
+                    } else {
+                        50.0
+                    };
 
-            let current_handles = c.windows().await.expect("창 핸들을 가져오는 데 실패했습니다.");
-            for handle in current_handles {
-                c.switch_to_window(handle.clone()).await.expect("탭으로 전환하는 데 실패했습니다.");
-                // 먼저 #board의 존재 여부를 확인합니다.
-                if c.find(Locator::Css("#board")).await.is_ok() {
-                    // #board가 존재하면, #MInfo 요소 내의 텍스트에 name이 포함되어 있는지 확인합니다.
-                    if let Ok(m_info_element) = c.find(Locator::Css("#MInfo")).await {
-                        let text = m_info_element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-                        if text.contains(name1) && text.contains(name2) {
-                            // #nowSN: 수순
-                            // #wdied: 백 사석 갯수
-                            // #bdied: 흑 사석 갯수
-                            // #ai_bwin: 흑 승리확률
-                            // #ai_wwin: 백 승리확률
-                            // #ai_title > font: 집차이
-                            let b_player = c.find(Locator::Css("#BPlayer")).await.expect("#BPlayer 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-                            let w_player = c.find(Locator::Css("#WPlayer")).await.expect("#WPlayer 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-                            let now_sn_text = c.find(Locator::Css("#nowSN")).await.expect("#nowSN 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-                            let now_sn = now_sn_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
-                            let wdied = c.find(Locator::Css("#wdied")).await.expect("#wdied 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.").parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
-                            let bdied = c.find(Locator::Css("#bdied")).await.expect("#bdied 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.").parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
-                            let ai_bwin_text = c.find(Locator::Css("#ai_bwin")).await.expect("#ai_bwin 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-                            let ai_bwin = ai_bwin_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
-                            let ai_wwin_text = c.find(Locator::Css("#ai_wwin")).await.expect("#ai_wwin 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-                            let ai_wwin = ai_wwin_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
-                            let ai_title_font_text = c.find(Locator::Css("#ai_title > font")).await.expect("#ai_title > font 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-                            let ai_title_font = ai_title_font_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
-                            let ai_win = if b_player.contains(name1) {
-                                ai_bwin
-                            } else if w_player.contains(name1) {
-                                ai_wwin
-                            } else {
-                                50.0
-                            };
-
-                            let wwin_display = match c.find(Locator::Css("#wwin_display")).await {
-                                Ok(e) => e.attr("style").await.unwrap_or_default().expect("REASON").contains("display: block"),
-                                Err(_) => false,
-                            };
-
-                            let bwin_display = match c.find(Locator::Css("#bwin_display")).await {
-                                Ok(e) => e.attr("style").await.unwrap_or_default().expect("REASON").contains("display: block"),
-                                Err(_) => false,
-                            };
-
-                            let ai_win = if wwin_display {
-                                if b_player.contains(name1) {
-                                    0.0
-                                } else if w_player.contains(name1) {
-                                    100.0
-                                } else {
-                                    ai_bwin
-                                }
-                            } else if bwin_display {
-                                if b_player.contains(name1) {
-                                    100.0
-                                } else if w_player.contains(name1) {
-                                    0.0
-                                } else {
-                                    ai_wwin
-                                }
-                            } else {
-                                if b_player.contains(name1) {
-                                    ai_bwin
-                                } else if w_player.contains(name1) {
-                                    ai_wwin
-                                } else {
-                                    0.0
-                                }
-                            };
-
-                            let live_win_probability = if wwin_display || bwin_display {
-                                ai_win
-                            } else {
-                                (current_elo_win_probability + ai_win * ((ai_title_font / (4.0 - (if ((now_sn - wdied - bdied) * 0.0175) > 3.999 { 3.999 } else { (now_sn - wdied - bdied) * 0.0175}))))) / ((ai_title_font / (4.0 - (if ((now_sn - wdied - bdied) * 0.0175) > 3.999 { 3.999 } else { (now_sn - wdied - bdied) * 0.0175}))) + 1.0)
-                            };
-                            match i {
-                                0 => live_match_result.set_first_rapid_win_probability(live_win_probability),
-                                1 => live_match_result.set_second_blitz_win_probability(live_win_probability),
-                                2 => live_match_result.set_third_blitz_win_probability(live_win_probability),
-                                3 => live_match_result.set_forth_blitz_win_probability(live_win_probability),
-                                _ => unreachable!(),
-                            };
-
-                            let win_probabilities = [
-                                live_match_result.first_rapid_win_probability(),
-                                live_match_result.second_blitz_win_probability(),
-                                live_match_result.third_blitz_win_probability(),
-                                live_match_result.forth_blitz_win_probability(),
-                            ];
-
-                            let all_win_probability = win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
-
-                            let three_win_one_lose_probability = win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
-                                let lose_prob = 1.0 - (win_prob / 100.0);
-                                win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_win_prob)| other_win_prob / 100.0).product::<f64>() * lose_prob
-                            }).sum::<f64>();
-
-                            let two_win_two_lose_probability = win_probabilities.iter().enumerate().combinations(2).map(|win_indices| {
-                                let win_prob_product = win_indices.iter().map(|&(i, _)| win_probabilities[i] / 100.0).product::<f64>();
-                                let lose_indices = (0..win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
-                                let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (win_probabilities[i] / 100.0)).product::<f64>();
-                                win_prob_product * lose_prob_product
-                            }).sum::<f64>();
-
-                            let one_win_three_lose_probability = win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
-                                let win_prob = win_prob / 100.0;
-                                win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_lose_prob)| 1.0 - (other_lose_prob / 100.0)).product::<f64>() * win_prob
-                            }).sum::<f64>();
-
-                            let all_lose_probability = win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
-
-                            let tie_win_probability = two_win_two_lose_probability * (live_match_result.tiebreaker_win_probability() / 100.0);
-                            let total_win_probability = tie_win_probability + three_win_one_lose_probability + all_win_probability;
-
-                            live_match_result.set_four_zero_probability(all_win_probability * 100.0);
-                            live_match_result.set_three_one_probability(three_win_one_lose_probability * 100.0);
-                            live_match_result.set_two_two_probability(two_win_two_lose_probability * 100.0);
-                            live_match_result.set_one_three_probability(one_win_three_lose_probability * 100.0);
-                            live_match_result.set_zero_four_probability(all_lose_probability * 100.0);
-                            live_match_result.set_total_win_probability(total_win_probability * 100.0);
-                        }
+                    live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + 1.0)
+                    // live_win_probability = (ai_win * ai_title_font * now_sn * 0.025 + current_elo_win_probability) / (ai_title_font * now_sn * 0.025 + 1.0)
+                } else {
+                    if match_element.find(Locator::Css("span.livedtl_tag_black")).await.is_err() {
+                        continue;
                     }
+                    let winner = match_element.find(Locator::Css("span.livedtl_tag_black")).await.expect("span.livedtl_tag_black 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+
+                    if winner.contains("黑胜") || winner.contains("黑中盘胜") {
+                        if b_player.contains(name1) {
+                            live_win_probability = 100.0;
+                        } else if w_player.contains(name1) {
+                            live_win_probability = 0.0;
+                        }
+                    } else if winner.contains("白胜") || winner.contains("白中盘胜") {
+                        if b_player.contains(name1) {
+                            live_win_probability = 0.0;
+                        } else if w_player.contains(name1) {
+                            live_win_probability = 100.0;
+                        }
+                    } else {
+                        continue;
+                    };
+                }
+                if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
+                    live_match_result.set_first_rapid_win_probability(live_win_probability);
+                } else if text.contains(match_result.second_blitz().player1().chinese_name()) && text.contains(match_result.second_blitz().player2().chinese_name()) {
+                    live_match_result.set_second_blitz_win_probability(live_win_probability);
+                } else if text.contains(match_result.third_blitz().player1().chinese_name()) && text.contains(match_result.third_blitz().player2().chinese_name()) {
+                    live_match_result.set_third_blitz_win_probability(live_win_probability);
+                } else if text.contains(match_result.forth_blitz().player1().chinese_name()) && text.contains(match_result.forth_blitz().player2().chinese_name()) {
+                    live_match_result.set_forth_blitz_win_probability(live_win_probability);
                 }
             }
-
-            if i == 3 {
-                let four_zero = live_match_result.four_zero_probability() / 10.0;
-                let three_one = live_match_result.three_one_probability() / 10.0;
-                let two_two = live_match_result.two_two_probability() / 10.0;
-                let one_three = live_match_result.one_three_probability() / 10.0;
-                let zero_four = live_match_result.zero_four_probability() / 10.0;
-                let team1_score = 4.0 * four_zero + 3.0 * three_one + 2.0 * two_two + 1.0 * one_three;
-                let team2_score = 1.0 * three_one + 2.0 * two_two + 3.0 * one_three + 4.0 * zero_four;
-                let output = format!(
-                    "========================\n\
-                    1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-                    2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-                    3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-                    4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-                    \n4-0: {:.2}%\n\
-                    3-1: {:.2}%\n\
-                    2-2: {:.2}%\n\
-                    1-3: {:.2}%\n\
-                    0-4: {:.2}%\n\
-                    \n총 승리확률: {:.2}%\n\
-                    \n현재 스코어: {:.0}-{:.0}\n\
-                    ========================",
-                    live_match_result.first_rapid().player1().korean_name(), live_match_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.first_rapid().player1_wins(), live_match_result.first_rapid().player2_wins(), live_match_result.first_rapid_win_probability(),
-                    live_match_result.second_blitz().player1().korean_name(), live_match_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.second_blitz().player1_wins(), live_match_result.second_blitz().player2_wins(), live_match_result.second_blitz_win_probability(),
-                    live_match_result.third_blitz().player1().korean_name(), live_match_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.third_blitz().player1_wins(), live_match_result.third_blitz().player2_wins(), live_match_result.third_blitz_win_probability(),
-                    live_match_result.forth_blitz().player1().korean_name(), live_match_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.forth_blitz().player1_wins(), live_match_result.forth_blitz().player2_wins(), live_match_result.forth_blitz_win_probability(),
-                    live_match_result.four_zero_probability(),
-                    live_match_result.three_one_probability(),
-                    live_match_result.two_two_probability(),
-                    live_match_result.one_three_probability(),
-                    live_match_result.zero_four_probability(),
-                    live_match_result.total_win_probability(),
-                    team1_score, team2_score
-                );
-                execute!(stdout, MoveTo(0, 0)).expect("커서를 이동하는 데 실패했습니다.");
-                execute!(stdout, Print(" ".repeat(2000))).expect("화면을 클리어하는 데 실패했습니다."); // 화면 크기에 따라 공백의 수를 조절해야 할 수 있습니다.
-                execute!(stdout, MoveTo(0, 0)).expect("커서를 이동하는 데 실패했습니다.");
-                execute!(stdout, Print(output)).expect("텍스트를 출력하는 데 실패했습니다.");
-            }
         }
+        c.refresh().await.expect("새로고침 하는 중 오류가 발생했습니다.");
+
+        let win_probabilities = [
+            live_match_result.first_rapid_win_probability(),
+            live_match_result.second_blitz_win_probability(),
+            live_match_result.third_blitz_win_probability(),
+            live_match_result.forth_blitz_win_probability(),
+        ];
+
+        let all_win_probability = win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
+
+        let three_win_one_lose_probability = win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
+            let lose_prob = 1.0 - (win_prob / 100.0);
+            win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_win_prob)| other_win_prob / 100.0).product::<f64>() * lose_prob
+        }).sum::<f64>();
+
+        let two_win_two_lose_probability = win_probabilities.iter().enumerate().combinations(2).map(|win_indices| {
+            let win_prob_product = win_indices.iter().map(|&(i, _)| win_probabilities[i] / 100.0).product::<f64>();
+            let lose_indices = (0..win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
+            let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (win_probabilities[i] / 100.0)).product::<f64>();
+            win_prob_product * lose_prob_product
+        }).sum::<f64>();
+
+        let one_win_three_lose_probability = win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
+            let win_prob = win_prob / 100.0;
+            win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_lose_prob)| 1.0 - (other_lose_prob / 100.0)).product::<f64>() * win_prob
+        }).sum::<f64>();
+
+        let all_lose_probability = win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
+
+        let tie_win_probability = two_win_two_lose_probability * (live_match_result.tiebreaker_win_probability() / 100.0);
+        let total_win_probability = tie_win_probability + three_win_one_lose_probability + all_win_probability;
+
+        live_match_result.set_four_zero_probability(all_win_probability * 100.0);
+        live_match_result.set_three_one_probability(three_win_one_lose_probability * 100.0);
+        live_match_result.set_two_two_probability(two_win_two_lose_probability * 100.0);
+        live_match_result.set_one_three_probability(one_win_three_lose_probability * 100.0);
+        live_match_result.set_zero_four_probability(all_lose_probability * 100.0);
+        live_match_result.set_total_win_probability(total_win_probability * 100.0);
+        let four_zero = live_match_result.four_zero_probability() / 100.0;
+        let three_one = live_match_result.three_one_probability() / 100.0;
+        let two_two = live_match_result.two_two_probability() / 100.0;
+        let one_three = live_match_result.one_three_probability() / 100.0;
+        let zero_four = live_match_result.zero_four_probability() / 100.0;
+        let team1_score = 4.0 * four_zero + 3.0 * three_one + 2.0 * two_two + 1.0 * one_three;
+        let team2_score = 1.0 * three_one + 2.0 * two_two + 3.0 * one_three + 4.0 * zero_four;
+        let output = format!(
+            "========================\n\
+            1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+            2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+            3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+            4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+            \n4-0: {:.2}%\n\
+            3-1: {:.2}%\n\
+            2-2: {:.2}%\n\
+            1-3: {:.2}%\n\
+            0-4: {:.2}%\n\
+            \n총 승리확률: {:.2}%\n\
+            \n현재 스코어: {:.2}-{:.2}\n\
+            ========================",
+            live_match_result.first_rapid().player1().korean_name(), live_match_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.first_rapid().player1_wins(), live_match_result.first_rapid().player2_wins(), live_match_result.first_rapid_win_probability(),
+            live_match_result.second_blitz().player1().korean_name(), live_match_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.second_blitz().player1_wins(), live_match_result.second_blitz().player2_wins(), live_match_result.second_blitz_win_probability(),
+            live_match_result.third_blitz().player1().korean_name(), live_match_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.third_blitz().player1_wins(), live_match_result.third_blitz().player2_wins(), live_match_result.third_blitz_win_probability(),
+            live_match_result.forth_blitz().player1().korean_name(), live_match_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, live_match_result.forth_blitz().player1_wins(), live_match_result.forth_blitz().player2_wins(), live_match_result.forth_blitz_win_probability(),
+            live_match_result.four_zero_probability(),
+            live_match_result.three_one_probability(),
+            live_match_result.two_two_probability(),
+            live_match_result.one_three_probability(),
+            live_match_result.zero_four_probability(),
+            live_match_result.total_win_probability(),
+            team1_score, team2_score
+        );
+        execute!(stdout, MoveTo(0, 0)).expect("커서를 이동하는 데 실패했습니다.");
+        execute!(stdout, Print(" ".repeat(2000))).expect("화면을 클리어하는 데 실패했습니다.");
+        execute!(stdout, MoveTo(0, 0)).expect("커서를 이동하는 데 실패했습니다.");
+        execute!(stdout, Print(output)).expect("텍스트를 출력하는 데 실패했습니다.");
     }
 
     println!("\nWebDriver를 닫으려면 엔터를 누르세요.");

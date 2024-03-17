@@ -565,7 +565,7 @@ pub async fn live_win_ratings(match_result: MatchResult) {
             break 'outer;
         }
 
-        c.wait().for_element(Locator::Css("span.overwrap.flex_item.center")).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
+        c.wait().forever().for_element(Locator::Css("span.overwrap.flex_item.center")).await.expect("폼이 로드될 때까지 기다리는 중 오류가 발생했습니다.");
         let matches = c.find_all(Locator::Css("div.livedtl_medium")).await.expect("div.livedtl_medium 요소를 찾는 중 오류가 발생했습니다.");
         for match_element in matches {
             let text = match_element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");

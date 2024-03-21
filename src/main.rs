@@ -3,10 +3,9 @@ mod utils;
 
 use chrono::Datelike;
 use models::{Lineup, MatchResult, Player, PlayerRelativity, Team};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{self, Write};
 use tokio;
-
 
 fn main() {
     let mut teams: Vec<Team> = Vec::new();
@@ -673,17 +672,24 @@ fn main() {
 
                         println!("========================");
                         if let Some(best_result) = best_match_result {
+                            let player1_best_tiebreaker_names: HashSet<String> = best_result.tiebreaker_relativities().iter()
+                                .filter_map(|detail| detail.as_ref())
+                                .map(|detail| detail.player1().korean_name().to_string())
+                                .collect();
+                            let player2_best_tiebreaker_names: HashSet<String> = best_result.tiebreaker_relativities().iter()
+                                .filter_map(|detail| detail.as_ref())
+                                .map(|detail| detail.player2().korean_name().to_string())
+                                .collect();
                             println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.first_rapid().player1().korean_name(), best_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.first_rapid().player1_wins(), best_result.first_rapid().player2_wins(), best_result.first_rapid_win_probability());
                             println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.second_blitz().player1().korean_name(), best_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.second_blitz().player1_wins(), best_result.second_blitz().player2_wins(), best_result.second_blitz_win_probability());
                             println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.third_blitz().player1().korean_name(), best_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.third_blitz().player1_wins(), best_result.third_blitz().player2_wins(), best_result.third_blitz_win_probability());
                             println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.forth_blitz().player1().korean_name(), best_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.forth_blitz().player1_wins(), best_result.forth_blitz().player2_wins(), best_result.forth_blitz_win_probability());
                             println!("\n4-0: {:.2}%", best_result.four_zero_probability());
                             println!("3-1: {:.2}%", best_result.three_one_probability());
-                            println!("2-2: {:.2}%", best_result.two_two_probability());
+                            println!("2-2: {:.2}% => ({}) vs ({}): {:.2}%", best_result.two_two_probability(), player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "), player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "), best_result.tiebreaker_win_probability());
                             println!("1-3: {:.2}%", best_result.one_three_probability());
                             println!("0-4: {:.2}%", best_result.zero_four_probability());
                             println!("\n총 승리확률: {:.2}%", best_result.total_win_probability());
-                            println!("에이스결정전 예상 승리확률: {:.2}%", best_result.tiebreaker_win_probability());
                         } else {
                             println!("적합한 매치 결과를 찾을 수 없습니다.");
                         }
@@ -959,17 +965,24 @@ fn main() {
 
                         println!("========================");
                         if let Some(best_result) = best_match_result {
+                            let player1_best_tiebreaker_names: HashSet<String> = best_result.tiebreaker_relativities().iter()
+                                .filter_map(|detail| detail.as_ref())
+                                .map(|detail| detail.player1().korean_name().to_string())
+                                .collect();
+                            let player2_best_tiebreaker_names: HashSet<String> = best_result.tiebreaker_relativities().iter()
+                                .filter_map(|detail| detail.as_ref())
+                                .map(|detail| detail.player2().korean_name().to_string())
+                                .collect();
                             println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.first_rapid().player1().korean_name(), best_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.first_rapid().player1_wins(), best_result.first_rapid().player2_wins(), best_result.first_rapid_win_probability());
                             println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.second_blitz().player1().korean_name(), best_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.second_blitz().player1_wins(), best_result.second_blitz().player2_wins(), best_result.second_blitz_win_probability());
                             println!("3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.third_blitz().player1().korean_name(), best_result.third_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.third_blitz().player1_wins(), best_result.third_blitz().player2_wins(), best_result.third_blitz_win_probability());
                             println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.forth_blitz().player1().korean_name(), best_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, best_result.forth_blitz().player1_wins(), best_result.forth_blitz().player2_wins(), best_result.forth_blitz_win_probability());
                             println!("\n4-0: {:.2}%", best_result.four_zero_probability());
                             println!("3-1: {:.2}%", best_result.three_one_probability());
-                            println!("2-2: {:.2}%", best_result.two_two_probability());
+                            println!("2-2: {:.2}% => ({}) vs ({}): {:.2}%", best_result.two_two_probability(), player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "), player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "), best_result.tiebreaker_win_probability());
                             println!("1-3: {:.2}%", best_result.one_three_probability());
                             println!("0-4: {:.2}%", best_result.zero_four_probability());
                             println!("\n총 승리확률: {:.2}%", best_result.total_win_probability());
-                            println!("에이스결정전 예상 승리확률: {:.2}%", best_result.tiebreaker_win_probability());
                         } else {
                             println!("적합한 매치 결과를 찾을 수 없습니다.");
                         }
@@ -995,6 +1008,15 @@ fn main() {
                             result.forth_blitz().player2().korean_name() == team2_combination[3].korean_name()
                         }).expect("매치 결과를 찾을 수 없습니다.");
 
+                        let player1_best_tiebreaker_names: HashSet<String> = match_result.tiebreaker_relativities().iter()
+                            .filter_map(|detail| detail.as_ref())
+                            .map(|detail| detail.player1().korean_name().to_string())
+                            .collect();
+                        let player2_best_tiebreaker_names: HashSet<String> = match_result.tiebreaker_relativities().iter()
+                            .filter_map(|detail| detail.as_ref())
+                            .map(|detail| detail.player2().korean_name().to_string())
+                            .collect();
+
                         println!("========================");
                         println!("1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", match_result.first_rapid().player1().korean_name(), match_result.first_rapid().player2().korean_name(), chrono::Utc::now().year() - 1, match_result.first_rapid().player1_wins(), match_result.first_rapid().player2_wins(), match_result.first_rapid_win_probability());
                         println!("2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", match_result.second_blitz().player1().korean_name(), match_result.second_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, match_result.second_blitz().player1_wins(), match_result.second_blitz().player2_wins(), match_result.second_blitz_win_probability());
@@ -1002,11 +1024,10 @@ fn main() {
                         println!("4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)", match_result.forth_blitz().player1().korean_name(), match_result.forth_blitz().player2().korean_name(), chrono::Utc::now().year() - 1, match_result.forth_blitz().player1_wins(), match_result.forth_blitz().player2_wins(), match_result.forth_blitz_win_probability());
                         println!("\n4-0: {:.2}%", match_result.four_zero_probability());
                         println!("3-1: {:.2}%", match_result.three_one_probability());
-                        println!("2-2: {:.2}%", match_result.two_two_probability());
+                        println!("2-2: {:.2}% => ({}) vs ({}): {:.2}%", match_result.two_two_probability(), player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "), player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "), match_result.tiebreaker_win_probability());
                         println!("1-3: {:.2}%", match_result.one_three_probability());
                         println!("0-4: {:.2}%", match_result.zero_four_probability());
                         println!("\n총 승리확률: {:.2}%", match_result.total_win_probability());
-                        println!("에이스결정전 예상 승리확률: {:.2}%", match_result.tiebreaker_win_probability());
                         println!("========================");
 
                         println!("\n계속하려면 엔터를 누르세요.");

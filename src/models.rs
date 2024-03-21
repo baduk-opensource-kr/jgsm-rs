@@ -243,8 +243,9 @@ pub struct MatchResult {
     two_two_probability: f64,
     one_three_probability: f64,
     zero_four_probability: f64,
-    tiebreaker_win_probability: f64,
     total_win_probability: f64,
+    tiebreaker_relativities: Vec<Option<TiebreakerRelativity>>,
+    tiebreaker_win_probability: f64,
 }
 
 impl MatchResult {
@@ -262,8 +263,9 @@ impl MatchResult {
         two_two_probability: f64,
         one_three_probability: f64,
         zero_four_probability: f64,
-        tiebreaker_win_probability: f64,
         total_win_probability: f64,
+        tiebreaker_relativities: Vec<Option<TiebreakerRelativity>>,
+        tiebreaker_win_probability: f64,
     ) -> Self {
         Self {
             first_rapid,
@@ -279,8 +281,9 @@ impl MatchResult {
             two_two_probability,
             one_three_probability,
             zero_four_probability,
-            tiebreaker_win_probability,
             total_win_probability,
+            tiebreaker_relativities,
+            tiebreaker_win_probability,
         }
     }
 
@@ -336,13 +339,18 @@ impl MatchResult {
         self.zero_four_probability
     }
 
+    pub fn total_win_probability(&self) -> f64 {
+        self.total_win_probability
+    }
+
+    pub fn tiebreaker_relativities(&self) -> &Vec<Option<TiebreakerRelativity>> {
+        &self.tiebreaker_relativities
+    }
+
     pub fn tiebreaker_win_probability(&self) -> f64 {
         self.tiebreaker_win_probability
     }
 
-    pub fn total_win_probability(&self) -> f64 {
-        self.total_win_probability
-    }
     pub fn set_first_rapid_win_probability(&mut self, value: f64) {
         self.first_rapid_win_probability = value;
     }
@@ -382,8 +390,17 @@ impl MatchResult {
     pub fn set_total_win_probability(&mut self, value: f64) {
         self.total_win_probability = value;
     }
+
+    pub fn set_tiebreaker_relativities(&mut self, value: Vec<Option<TiebreakerRelativity>>) {
+        self.tiebreaker_relativities = value;
+    }
+
+    pub fn set_tiebreaker_win_probability(&mut self, value: f64) {
+        self.tiebreaker_win_probability = value;
+    }
 }
 
+#[derive(Clone)]
 pub struct TiebreakerRelativity {
     player1: Player,
     player2: Player,

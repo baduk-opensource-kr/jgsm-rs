@@ -296,8 +296,9 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
         two_win_two_lose_probability * 100.0,
         one_win_three_lose_probability * 100.0,
         all_lose_probability * 100.0,
-        tiebreaker_win_probability,
         total_win_probability * 100.0,
+        vec![team1_tiebreaker_details.cloned(), team2_tiebreaker_details.cloned()],
+        tiebreaker_win_probability,
     )
 }
 
@@ -801,17 +802,8 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
         let all_lose_probability = win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
 
         let tie_win_probability = two_win_two_lose_probability * (tiebreaker_win_probability / 100.0);
-        let total_win_probability = tie_win_probability + three_win_one_lose_probability + all_win_probability;
 
-        let team1_and_team2_tiebreaker_details = vec![team1_tiebreaker_details, team2_tiebreaker_details];
-        let player1_best_tiebreaker_names: HashSet<String> = team1_and_team2_tiebreaker_details.iter()
-            .filter_map(|detail| detail.as_ref())
-            .map(|detail| detail.player1().korean_name().to_string())
-            .collect();
-        let player2_best_tiebreaker_names: HashSet<String> = team1_and_team2_tiebreaker_details.iter()
-            .filter_map(|detail| detail.as_ref())
-            .map(|detail| detail.player2().korean_name().to_string())
-            .collect();
+        let total_win_probability = tie_win_probability + three_win_one_lose_probability + all_win_probability;
 
         live_match_result.set_four_zero_probability(all_win_probability * 100.0);
         live_match_result.set_three_one_probability(three_win_one_lose_probability * 100.0);
@@ -819,6 +811,8 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
         live_match_result.set_one_three_probability(one_win_three_lose_probability * 100.0);
         live_match_result.set_zero_four_probability(all_lose_probability * 100.0);
         live_match_result.set_total_win_probability(total_win_probability * 100.0);
+        live_match_result.set_tiebreaker_relativities(vec![team1_tiebreaker_details.cloned(), team2_tiebreaker_details.cloned()]);
+        live_match_result.set_tiebreaker_win_probability(tiebreaker_win_probability);
         let four_zero = live_match_result.four_zero_probability() / 100.0;
         let three_one = live_match_result.three_one_probability() / 100.0;
         let two_two = live_match_result.two_two_probability() / 100.0;
@@ -826,6 +820,14 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
         let zero_four = live_match_result.zero_four_probability() / 100.0;
         let team1_score = 4.0 * four_zero + 3.0 * three_one + 2.0 * two_two + 1.0 * one_three;
         let team2_score = 1.0 * three_one + 2.0 * two_two + 3.0 * one_three + 4.0 * zero_four;
+        let player1_best_tiebreaker_names: HashSet<String> = live_match_result.tiebreaker_relativities().iter()
+            .filter_map(|detail| detail.as_ref())
+            .map(|detail| detail.player1().korean_name().to_string())
+            .collect();
+        let player2_best_tiebreaker_names: HashSet<String> = live_match_result.tiebreaker_relativities().iter()
+            .filter_map(|detail| detail.as_ref())
+            .map(|detail| detail.player2().korean_name().to_string())
+            .collect();
         let output = format!(
             "========================\n\
             1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\

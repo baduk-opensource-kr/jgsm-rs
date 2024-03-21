@@ -1035,12 +1035,12 @@ fn main() {
                                     let player2_position = team2_combination.iter().position(|p| p.korean_name() == relativity.player2().korean_name());
                                     let player1_penalty = if let Some(pos) = player1_position {
                                         let base_penalty = match pos {
-                                            0 => 0.95,
-                                            1 => 0.98,
-                                            _ => 0.90,
+                                            0 => 1.0 / 1.04,
+                                            1 => 1.0 / 1.02,
+                                            _ => 1.0 / 1.08,
                                         };
                                         if defeated_players.contains(&team1_combination[pos]) {
-                                            base_penalty * 0.90
+                                            base_penalty * (1.0 / 1.10)
                                         } else {
                                             base_penalty
                                         }
@@ -1050,12 +1050,12 @@ fn main() {
 
                                     let player2_penalty = if let Some(pos) = player2_position {
                                         let base_penalty = match pos {
-                                            0 => 1.0 / 0.95,
-                                            1 => 1.0 / 0.98,
-                                            _ => 1.0 / 0.90,
+                                            0 => 1.04,
+                                            1 => 1.02,
+                                            _ => 1.08,
                                         };
                                         if defeated_players.contains(&team2_combination[pos]) {
-                                            base_penalty * (1.0 / 0.90)
+                                            base_penalty * 1.10
                                         } else {
                                             base_penalty
                                         }

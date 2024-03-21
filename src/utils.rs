@@ -7,6 +7,7 @@ use crossterm::{
 };
 use chrono::Datelike;
 use fantoccini::{Client, Locator};
+use fantoccini::wd::TimeoutConfiguration;
 use itertools::Itertools;
 use reqwest;
 use scraper::{Html, Selector};
@@ -14,6 +15,7 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::io;
 use std::io::stdout;
+use std::time::Duration;
 use xlsxwriter::format::FormatColor;
 use xlsxwriter::prelude::Workbook;
 use xlsxwriter::Format;
@@ -199,18 +201,18 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
             let player2_position = team2_players.iter().position(|p| p.korean_name() == relativity.player2().korean_name());
             let player1_penalty = if let Some(pos) = player1_position {
                 match pos {
-                    0 => 0.95,
-                    1 => 0.98,
-                    _ => 0.90,
+                    0 => 1.0 / 1.04,
+                    1 => 1.0 / 1.02,
+                    _ => 1.0 / 1.08,
                 }
             } else {
                 1.0
             };
             let player2_penalty = if let Some(pos) = player2_position {
                 match pos {
-                    0 => 1.0 / 0.95,
-                    1 => 1.0 / 0.98,
-                    _ => 1.0 / 0.90,
+                    0 => 1.04,
+                    1 => 1.02,
+                    _ => 1.08,
                 }
             } else {
                 1.0
@@ -547,6 +549,7 @@ pub fn filter_team1_lineups(selected_teams: &[Team], team1_all_lineups: &[Lineup
 
 pub async fn live_win_ratings(match_result: MatchResult) {
     let c = Client::new("http://127.0.0.1:4444").await.expect("WebDriver에 연결하지 못했습니다.");
+    c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
     c.goto("https://home.yikeweiqi.com/#/live").await.expect("yikeweiqi에 연결하지 못했습니다.");
 
     let mut live_match_result = match_result.clone();
@@ -565,12 +568,22 @@ pub async fn live_win_ratings(match_result: MatchResult) {
             break 'outer;
         }
 
-        if c.wait().for_element(Locator::Css("span.overwrap.flex_item.center")).await.is_err() {
-            continue;
+        if c.wait().for_element(Locator::Css("span.overwrap.flex_item")).await.is_err() {
+            if let Err(e) = c.refresh().await {
+                eprintln!("새로고침 하는 중 오류가 발생했습니다: {}", e);
+                continue;
+            }
         }
+
+        c.find(Locator::Css("div.ivu-col.ivu-col-span-24")).await.expect("div.ivu-col.ivu-col-span-24 요소를 찾는 중 오류가 발생했습니다.").click().await.expect("클릭하는 데 실패했습니다.");
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         let matches = c.find_all(Locator::Css("div.livedtl_medium")).await.expect("div.livedtl_medium 요소를 찾는 중 오류가 발생했습니다.");
         for match_element in matches {
-            let text = match_element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+            let text = match match_element.text().await {
+                Ok(t) => t,
+                Err(_) => continue,
+            };
             if text.contains("KB") || text.contains("韩国围甲") {
                 let mut live_win_probability = 0.0;
                 let name1 = if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
@@ -654,7 +667,9 @@ pub async fn live_win_ratings(match_result: MatchResult) {
                 }
             }
         }
-        c.refresh().await.expect("새로고침 하는 중 오류가 발생했습니다.");
+        if c.refresh().await.is_err() {
+            continue;
+        }
 
         let win_probabilities = [
             live_match_result.first_rapid_win_probability(),

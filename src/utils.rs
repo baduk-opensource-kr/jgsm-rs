@@ -1,4 +1,4 @@
-use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team};
+use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team, TiebreakerRelativity};
 use crossterm::{
     execute,
     terminal::{Clear, ClearType},
@@ -195,7 +195,7 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
         }
     }
 
-    let tiebreaker_win_probability = player_relativities.iter()
+    let mapped_tiebreaker_win_probability: Vec<TiebreakerRelativity> = player_relativities.iter()
         .map(|relativity| {
             let player1_position = team1_players.iter().position(|p| p.korean_name() == relativity.player1().korean_name());
             let player2_position = team2_players.iter().position(|p| p.korean_name() == relativity.player2().korean_name());
@@ -203,7 +203,9 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
                 match pos {
                     0 => 1.0 / 1.04,
                     1 => 1.0 / 1.02,
-                    _ => 1.0 / 1.08,
+                    2 => 1.0 / 1.08,
+                    3 => 1.0 / 1.08,
+                    _ => 1.0,
                 }
             } else {
                 1.0
@@ -212,21 +214,48 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
                 match pos {
                     0 => 1.04,
                     1 => 1.02,
-                    _ => 1.08,
+                    2 => 1.08,
+                    3 => 1.08,
+                    _ => 1.0,
                 }
             } else {
                 1.0
             };
-            (relativity.player1().korean_name().clone(), relativity.bullet_win_probability() * player1_penalty * player2_penalty)
+            TiebreakerRelativity::new(
+                relativity.player1().clone(), 
+                relativity.player2().clone(), 
+                relativity.bullet_win_probability() * player1_penalty * player2_penalty
+            )
         })
-        .fold(HashMap::new(), |mut acc: HashMap<String, Vec<f64>>, (name, prob)| {
-            acc.entry(name).or_insert_with(Vec::new).push(prob);
+        .collect();
+
+    let team1_tiebreaker_details = mapped_tiebreaker_win_probability.iter()
+        .fold(HashMap::<String, Vec<&TiebreakerRelativity>>::new(), |mut acc, relativity| {
+            let player1_name = relativity.player1().korean_name();
+            acc.entry(player1_name.to_string()).or_insert_with(Vec::new).push(relativity);
             acc
         })
         .values()
-        .map(|probs| probs.iter().cloned().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0))
-        .max_by(|a, b| a.partial_cmp(b).unwrap())
-        .unwrap_or(0.0);
+        .map(|relativities| {
+            relativities.iter().min_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap()).unwrap()
+        })
+        .max_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap())
+        .cloned();
+
+    let team2_tiebreaker_details = mapped_tiebreaker_win_probability.iter()
+        .fold(HashMap::<String, Vec<&TiebreakerRelativity>>::new(), |mut acc, relativity| {
+            let player2_name = relativity.player2().korean_name();
+            acc.entry(player2_name.to_string()).or_insert_with(Vec::new).push(relativity);
+            acc
+        })
+        .values()
+        .map(|relativities| {
+            relativities.iter().max_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap()).unwrap()
+        })
+        .min_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap())
+        .cloned();
+
+    let tiebreaker_win_probability = (team1_tiebreaker_details.map_or(50.0, |details| details.win_probability()) + team2_tiebreaker_details.map_or(50.0, |details| details.win_probability())) / 2.0;
 
     let all_win_probability = win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
 
@@ -547,9 +576,8 @@ pub fn filter_team1_lineups(selected_teams: &[Team], team1_all_lineups: &[Lineup
     }).cloned().collect()
 }
 
-pub async fn live_win_ratings(match_result: MatchResult) {
+pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Vec<PlayerRelativity>) {
     let c = Client::new("http://127.0.0.1:4444").await.expect("WebDriver에 연결하지 못했습니다.");
-    c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
     c.goto("https://home.yikeweiqi.com/#/live").await.expect("yikeweiqi에 연결하지 못했습니다.");
 
     let mut live_match_result = match_result.clone();
@@ -567,17 +595,6 @@ pub async fn live_win_ratings(match_result: MatchResult) {
         if rx.try_recv().is_ok() {
             break 'outer;
         }
-
-        if c.wait().for_element(Locator::Css("span.overwrap.flex_item")).await.is_err() {
-            if let Err(e) = c.refresh().await {
-                eprintln!("새로고침 하는 중 오류가 발생했습니다: {}", e);
-                continue;
-            }
-        }
-
-        c.find(Locator::Css("div.ivu-col.ivu-col-span-24")).await.expect("div.ivu-col.ivu-col-span-24 요소를 찾는 중 오류가 발생했습니다.").click().await.expect("클릭하는 데 실패했습니다.");
-        std::thread::sleep(std::time::Duration::from_secs(1));
-
         let matches = c.find_all(Locator::Css("div.livedtl_medium")).await.expect("div.livedtl_medium 요소를 찾는 중 오류가 발생했습니다.");
         for match_element in matches {
             let text = match match_element.text().await {
@@ -599,7 +616,9 @@ pub async fn live_win_ratings(match_result: MatchResult) {
                 };
                 let b_player = match_element.find(Locator::Css("div.livedtl_first")).await.expect("div.livedtl_first 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
                 let w_player = match_element.find(Locator::Css("div.livedtl_third")).await.expect("div.livedtl_third 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_millis(100)), Some(Duration::from_millis(100)), Some(Duration::from_millis(100)))).await.expect("타임아웃 설정 실패");
                 if match_element.find(Locator::Css("div.progress_bar_text_box")).await.is_ok() {
+                    c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
                     let ai_title_font = match match_element.find(Locator::Css("span.overwrap.flex_item.center")).await {
                         Ok(element) => {
                             let ai_title_font_text = element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
@@ -633,12 +652,13 @@ pub async fn live_win_ratings(match_result: MatchResult) {
                     };
 
                     live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + 1.0)
-                    // live_win_probability = (ai_win * ai_title_font * now_sn * 0.025 + current_elo_win_probability) / (ai_title_font * now_sn * 0.025 + 1.0)
                 } else {
-                    if match_element.find(Locator::Css("span.livedtl_tag_black")).await.is_err() {
+                    c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
+                    let winner = if let Ok(element) = match_element.find(Locator::Css("span.livedtl_tag_black")).await {
+                        element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.")
+                    } else {
                         continue;
-                    }
-                    let winner = match_element.find(Locator::Css("span.livedtl_tag_black")).await.expect("span.livedtl_tag_black 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                    };
 
                     if winner.contains("黑胜") || winner.contains("黑中盘胜") {
                         if b_player.contains(name1) {
@@ -667,9 +687,90 @@ pub async fn live_win_ratings(match_result: MatchResult) {
                 }
             }
         }
+
         if c.refresh().await.is_err() {
             continue;
         }
+        if c.wait().for_element(Locator::Css("div.ivu-col.ivu-col-span-24")).await.is_err() {
+            if let Err(e) = c.refresh().await {
+                eprintln!("새로고침 하는 중 오류가 발생했습니다: {}", e);
+                continue;
+            }
+        }
+        c.find(Locator::Css("div.ivu-col.ivu-col-span-24")).await.expect("div.ivu-col.ivu-col-span-24 요소를 찾는 중 오류가 발생했습니다.").click().await.expect("클릭하는 데 실패했습니다.");
+
+        let mapped_tiebreaker_win_probability: Vec<TiebreakerRelativity> = player_relativities.iter()
+            .map(|relativity| {
+                let player1_position = [
+                    live_match_result.first_rapid().player1().korean_name(),
+                    live_match_result.second_blitz().player1().korean_name(),
+                    live_match_result.third_blitz().player1().korean_name(),
+                    live_match_result.forth_blitz().player1().korean_name(),
+                ].iter().position(|&name| name == relativity.player1().korean_name());
+                let player2_position = [
+                    live_match_result.first_rapid().player2().korean_name(),
+                    live_match_result.second_blitz().player2().korean_name(),
+                    live_match_result.third_blitz().player2().korean_name(),
+                    live_match_result.forth_blitz().player2().korean_name(),
+                ].iter().position(|&name| name == relativity.player2().korean_name());
+
+                let player1_penalty = if let Some(pos) = player1_position {
+                    match pos {
+                        0 => (1.0 / 1.04) * (1.0 / (1.0 + (0.04 * (1.0 - live_match_result.first_rapid_win_probability() / 100.0)))),
+                        1 => (1.0 / 1.02) * (1.0 / (1.0 + (0.02 * (1.0 - live_match_result.second_blitz_win_probability() / 100.0)))),
+                        2 => (1.0 / 1.08) * (1.0 / (1.0 + (0.08 * (1.0 - live_match_result.third_blitz_win_probability() / 100.0)))),
+                        3 => (1.0 / 1.08) * (1.0 / (1.0 + (0.08 * (1.0 - live_match_result.forth_blitz_win_probability() / 100.0)))),
+                        _ => 1.0,
+                    }
+                } else {
+                    1.0
+                };
+                let player2_penalty = if let Some(pos) = player2_position {
+                    match pos {
+                        0 => 1.04 * (1.0 + (0.04 * (1.0 - live_match_result.first_rapid_win_probability() / 100.0))),
+                        1 => 1.02 * (1.0 + (0.02 * (1.0 - live_match_result.second_blitz_win_probability() / 100.0))),
+                        2 => 1.08 * (1.0 + (0.08 * (1.0 - live_match_result.third_blitz_win_probability() / 100.0))),
+                        3 => 1.08 * (1.0 + (0.08 * (1.0 - live_match_result.forth_blitz_win_probability() / 100.0))),
+                        _ => 1.0,
+                    }
+                } else {
+                    1.0
+                };
+                TiebreakerRelativity::new(
+                    relativity.player1().clone(), 
+                    relativity.player2().clone(), 
+                    relativity.bullet_win_probability() * player1_penalty * player2_penalty
+                )
+            })
+            .collect();
+
+        let team1_tiebreaker_details = mapped_tiebreaker_win_probability.iter()
+            .fold(HashMap::<String, Vec<&TiebreakerRelativity>>::new(), |mut acc, relativity| {
+                let player1_name = relativity.player1().korean_name();
+                acc.entry(player1_name.to_string()).or_insert_with(Vec::new).push(relativity);
+                acc
+            })
+            .values()
+            .map(|relativities| {
+                relativities.iter().min_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap()).unwrap()
+            })
+            .max_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap())
+            .cloned();
+
+        let team2_tiebreaker_details = mapped_tiebreaker_win_probability.iter()
+            .fold(HashMap::<String, Vec<&TiebreakerRelativity>>::new(), |mut acc, relativity| {
+                let player2_name = relativity.player2().korean_name();
+                acc.entry(player2_name.to_string()).or_insert_with(Vec::new).push(relativity);
+                acc
+            })
+            .values()
+            .map(|relativities| {
+                relativities.iter().max_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap()).unwrap()
+            })
+            .min_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap())
+            .cloned();
+
+        let tiebreaker_win_probability = (team1_tiebreaker_details.map_or(0.0, |details| details.win_probability()) + team2_tiebreaker_details.map_or(0.0, |details| details.win_probability())) / 2.0;
 
         let win_probabilities = [
             live_match_result.first_rapid_win_probability(),
@@ -699,8 +800,18 @@ pub async fn live_win_ratings(match_result: MatchResult) {
 
         let all_lose_probability = win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
 
-        let tie_win_probability = two_win_two_lose_probability * (live_match_result.tiebreaker_win_probability() / 100.0);
+        let tie_win_probability = two_win_two_lose_probability * (tiebreaker_win_probability / 100.0);
         let total_win_probability = tie_win_probability + three_win_one_lose_probability + all_win_probability;
+
+        let team1_and_team2_tiebreaker_details = vec![team1_tiebreaker_details, team2_tiebreaker_details];
+        let player1_best_tiebreaker_names: HashSet<String> = team1_and_team2_tiebreaker_details.iter()
+            .filter_map(|detail| detail.as_ref())
+            .map(|detail| detail.player1().korean_name().to_string())
+            .collect();
+        let player2_best_tiebreaker_names: HashSet<String> = team1_and_team2_tiebreaker_details.iter()
+            .filter_map(|detail| detail.as_ref())
+            .map(|detail| detail.player2().korean_name().to_string())
+            .collect();
 
         live_match_result.set_four_zero_probability(all_win_probability * 100.0);
         live_match_result.set_three_one_probability(three_win_one_lose_probability * 100.0);
@@ -723,7 +834,7 @@ pub async fn live_win_ratings(match_result: MatchResult) {
             4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
             \n4-0: {:.2}%\n\
             3-1: {:.2}%\n\
-            2-2: {:.2}%\n\
+            2-2: {:.2}% => ({}) vs ({}): {:.2}%\n\
             1-3: {:.2}%\n\
             0-4: {:.2}%\n\
             \n총 승리확률: {:.2}%\n\
@@ -736,6 +847,9 @@ pub async fn live_win_ratings(match_result: MatchResult) {
             live_match_result.four_zero_probability(),
             live_match_result.three_one_probability(),
             live_match_result.two_two_probability(),
+            player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
+            player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
+            tiebreaker_win_probability,
             live_match_result.one_three_probability(),
             live_match_result.zero_four_probability(),
             live_match_result.total_win_probability(),

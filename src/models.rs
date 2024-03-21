@@ -384,6 +384,38 @@ impl MatchResult {
     }
 }
 
+pub struct TiebreakerRelativity {
+    player1: Player,
+    player2: Player,
+    win_probability: f64,
+}
+
+impl TiebreakerRelativity {
+    pub fn new(
+        player1: Player,
+        player2: Player,
+        win_probability: f64,
+    ) -> Self {
+        Self {
+            player1,
+            player2,
+            win_probability,
+        }
+    }
+
+    pub fn player1(&self) -> &Player {
+        &self.player1
+    }
+
+    pub fn player2(&self) -> &Player {
+        &self.player2
+    }
+
+    pub fn win_probability(&self) -> f64 {
+        self.win_probability
+    }
+}
+
 // #[derive(Clone)]
 // pub struct PostMatchResult {
 //     first_rapid: PlayerRelativity,

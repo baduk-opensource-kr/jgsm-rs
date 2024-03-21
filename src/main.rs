@@ -1107,7 +1107,7 @@ fn main() {
                             .unwrap();
 
                         rt.block_on(async {
-                            utils::live_win_ratings(match_result.clone()).await;
+                            utils::live_win_ratings(match_result.clone(), player_relativities.clone()).await;
                         });
                     },
                     "exit" => break,

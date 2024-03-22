@@ -818,8 +818,9 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
         let two_two = live_match_result.two_two_probability() / 100.0;
         let one_three = live_match_result.one_three_probability() / 100.0;
         let zero_four = live_match_result.zero_four_probability() / 100.0;
-        let team1_score = 4.0 * four_zero + 3.0 * three_one + 2.0 * two_two + 1.0 * one_three;
-        let team2_score = 1.0 * three_one + 2.0 * two_two + 3.0 * one_three + 4.0 * zero_four;
+        let tiebreaker = live_match_result.tiebreaker_win_probability() / 100.0;
+        let team1_score = 4.0 * four_zero + 3.0 * three_one + 2.0 * two_two + 1.0 * one_three + two_two * tiebreaker;
+        let team2_score = 1.0 * three_one + 2.0 * two_two + 3.0 * one_three + 4.0 * zero_four + two_two * (1.0 - tiebreaker);
         let player1_best_tiebreaker_names: HashSet<String> = live_match_result.tiebreaker_relativities().iter()
             .filter_map(|detail| detail.as_ref())
             .map(|detail| detail.player1().korean_name().to_string())

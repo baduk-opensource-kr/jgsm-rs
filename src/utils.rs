@@ -852,7 +852,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             live_match_result.two_two_probability(),
             player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
             player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
-            tiebreaker_win_probability,
+            live_match_result.tiebreaker_win_probability(),
             live_match_result.one_three_probability(),
             live_match_result.zero_four_probability(),
             live_match_result.total_win_probability(),

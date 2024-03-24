@@ -1,8 +1,11 @@
+use chrono::NaiveDate;
+
 #[derive(Clone, PartialEq)]
 pub struct Player {
     korean_name: String,
     english_name: String,
     chinese_name: String,
+    birthday: NaiveDate,
     elo_rating: f64,
     condition_weight: f64,
     rapid_weight: f64,
@@ -15,6 +18,7 @@ impl Player {
         korean_name: String,
         english_name: String,
         chinese_name: String,
+        birthday: NaiveDate,
         elo_rating: f64,
         condition_weight: f64,
         rapid_weight: f64,
@@ -25,6 +29,7 @@ impl Player {
             korean_name,
             english_name,
             chinese_name,
+            birthday,
             elo_rating,
             condition_weight,
             rapid_weight,
@@ -83,6 +88,12 @@ impl Player {
 
     pub fn set_bullet_weight(&mut self, bullet_weight: f64) {
         self.bullet_weight = bullet_weight;
+    }
+
+    pub fn get_days_since_birth(&self) -> f64 {
+        let today = chrono::Utc::now().date_naive();
+        let duration_since_birth = today.signed_duration_since(self.birthday);
+        duration_since_birth.num_seconds() as f64 / 86_400.0
     }
 }
 

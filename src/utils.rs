@@ -5,7 +5,7 @@ use crossterm::{
     cursor::{MoveTo, SavePosition},
     style::Print,
 };
-use chrono::{Datelike, Timelike};
+use chrono::{Datelike, Timelike, NaiveDate};
 use fantoccini::{Client, Locator};
 use fantoccini::wd::TimeoutConfiguration;
 use itertools::Itertools;
@@ -13,6 +13,7 @@ use reqwest;
 use scraper::{Html, Selector};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
+use std::f64::consts::E;
 use std::io;
 use std::io::stdout;
 use std::time::Duration;
@@ -134,8 +135,12 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
         for player in team.players_mut().iter_mut() {
             if let Some(&rating) = player_ratings_on_baeteil.get(player.korean_name()) {
                 player.set_elo_rating(rating);
+                player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()));
+                player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) * 2.0);
             } else if let Some(&rating) = player_ratings_on_goratings.get(player.english_name()) {
                 player.set_elo_rating(rating + goratings_to_baeteil);
+                player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()));
+                player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) * 2.0);
             }
         }
     }
@@ -539,7 +544,7 @@ pub fn select_team_combination(team: &Team) -> Vec<&Player> {
 }
 
 pub fn filter_team1_lineups(selected_teams: &[Team], team1_all_lineups: &[Lineup]) -> Vec<Lineup> {
-    let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), 0.0, 0.0, 0.0, 0.0, 0.0);
+    let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), NaiveDate::from_ymd_opt(2000, 1, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0);
 
     let mut team1_combination: Vec<&Player> = Vec::new();
     println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name());
@@ -1024,4 +1029,14 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
     io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
 
     c.close().await.expect("WebDriver를 닫는 데 실패했습니다.");
+}
+
+fn speed_aging_curve(days_since_birth: f64) -> f64 {
+    let k1: f64 = 81.04;
+    let k2: f64 = -0.00224;
+    let k3: f64 = 10775.89;
+    let k4: f64 = 0.00314;
+    let k5: f64 = -81.51;
+
+    k1 / (1.0 + E.powf(-k2 * (days_since_birth - k3))) + k4 * days_since_birth + k5
 }

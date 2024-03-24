@@ -611,16 +611,32 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
 
             if text.contains("KB") || text.contains("韩国围甲") && livedtl_date == now.date_naive() && now < today_20_clock {
                 let mut live_win_probability = 50.0;
-                let name1 = if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
-                    match_result.first_rapid().player1().chinese_name()
+                let (name1, elo1, elo2) = if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
+                    (
+                        match_result.first_rapid().player1().chinese_name(),
+                        match_result.first_rapid().player1().elo_rating() + match_result.first_rapid().player1().condition_weight() + match_result.first_rapid().player1().rapid_weight(),
+                        match_result.first_rapid().player2().elo_rating() + match_result.first_rapid().player2().condition_weight() + match_result.first_rapid().player2().rapid_weight()
+                    )
                 } else if text.contains(match_result.second_blitz().player1().chinese_name()) && text.contains(match_result.second_blitz().player2().chinese_name()) {
-                    match_result.second_blitz().player1().chinese_name()
+                    (
+                        match_result.second_blitz().player1().chinese_name(),
+                        match_result.second_blitz().player1().elo_rating() + match_result.second_blitz().player1().condition_weight() + match_result.second_blitz().player1().rapid_weight(),
+                        match_result.second_blitz().player2().elo_rating() + match_result.second_blitz().player2().condition_weight() + match_result.second_blitz().player2().rapid_weight()
+                    )
                 } else if text.contains(match_result.third_blitz().player1().chinese_name()) && text.contains(match_result.third_blitz().player2().chinese_name()) {
-                    match_result.third_blitz().player1().chinese_name()
+                    (
+                        match_result.third_blitz().player1().chinese_name(),
+                        match_result.third_blitz().player1().elo_rating() + match_result.third_blitz().player1().condition_weight() + match_result.third_blitz().player1().rapid_weight(),
+                        match_result.third_blitz().player2().elo_rating() + match_result.third_blitz().player2().condition_weight() + match_result.third_blitz().player2().rapid_weight()
+                    )
                 } else if text.contains(match_result.forth_blitz().player1().chinese_name()) && text.contains(match_result.forth_blitz().player2().chinese_name()) {
-                    match_result.forth_blitz().player1().chinese_name()
+                    (
+                        match_result.forth_blitz().player1().chinese_name(),
+                        match_result.forth_blitz().player1().elo_rating() + match_result.forth_blitz().player1().condition_weight() + match_result.forth_blitz().player1().rapid_weight(),
+                        match_result.forth_blitz().player2().elo_rating() + match_result.forth_blitz().player2().condition_weight() + match_result.forth_blitz().player2().rapid_weight()
+                    )
                 } else {
-                    ""
+                    (match_result.first_rapid().player1().chinese_name(), 0.0, 0.0)
                 };
                 let b_player = match_element.find(Locator::Css("div.livedtl_first")).await.expect("div.livedtl_first 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
                 let w_player = match_element.find(Locator::Css("div.livedtl_third")).await.expect("div.livedtl_third 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
@@ -659,7 +675,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                         50.0
                     };
 
-                    live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + 1.0)
+                    live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (5.152 + (-0.0883 * current_elo_win_probability) + (-0.0883 * ai_win) + (0.000339 * current_elo_win_probability * current_elo_win_probability) + (0.000339 * ai_win * ai_win) + (0.0010875 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (5.152 + (-0.0883 * current_elo_win_probability) + (-0.0883 * ai_win) + (0.000339 * current_elo_win_probability * current_elo_win_probability) + (0.000339 * ai_win * ai_win) + (0.0010875 * current_elo_win_probability * ai_win)) + 1.0)
                 } else {
                     c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
                     let winner = if let Ok(element) = match_element.find(Locator::Css("span.livedtl_tag_black")).await {

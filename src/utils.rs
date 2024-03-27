@@ -33,13 +33,16 @@ pub fn calculate_win_probability_with_relative_record(player1_elo: f64, player2_
     let win_rate_difference = if total_games > 0 {
         player1_wins as f64 / total_games as f64
     } else {
-        0.0
+        0.5
     };
 
     interpolate(win_rate_difference, standard_error(base_probability, total_games as f64) * 2.0, base_probability)
 }
 
 fn standard_error(base_probability: f64, total_games: f64) -> f64 {
+    if total_games <= 0.0 {
+        return 0.5;
+    }
     (base_probability * (1.0 - base_probability) / total_games).sqrt()
 }
 

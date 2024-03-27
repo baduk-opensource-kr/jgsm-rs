@@ -36,7 +36,24 @@ pub fn calculate_win_probability_with_relative_record(player1_elo: f64, player2_
         0.0
     };
 
-    ((base_probability * (15.0 - total_games.min(14) as f64)) + (win_rate_difference * total_games.min(14) as f64)) / 15.0
+    interpolate(win_rate_difference, standard_error(base_probability, total_games as f64) * 2.0, base_probability)
+}
+
+fn standard_error(base_probability: f64, total_games: f64) -> f64 {
+    (base_probability * (1.0 - base_probability) / total_games).sqrt()
+}
+
+fn interpolate(relative_probability: f64, standard_error: f64, base_probability: f64) -> f64 {
+    // weight가 0보다 작으면 left를 반환
+    if standard_error <= 0.0 {
+        return relative_probability;
+    // weight가 1보다 크면 right를 반환
+    } else if standard_error >= 1.0 {
+        return base_probability;
+    // weight가 0에서 1 사이에 있을 때는 left와 right 사이를 선형 보간하여 반환
+    } else {
+        return relative_probability * (1.0 - standard_error) + base_probability * standard_error;
+    }
 }
 
 pub fn fetch_player_ratings_on_baeteil() -> Result<HashMap<String, f64>, Box<dyn std::error::Error>> {
@@ -96,7 +113,7 @@ pub fn fetch_head_to_head_record(gisa1: &str, gisa2: &str) -> Result<HashMap<Str
     let mut gisa1_wins = 0;
     let mut gisa2_wins = 0;
 
-    for year in (current_year - 1)..=current_year {
+    for year in (current_year - 3)..=current_year {
         let url = format!("https://cyberoro.com/cooperate/giwon/gibo_M_in.oro?ydate={}&gisa1={}&gisa2={}&listCnt=20&P_KEY=0", year, gisa1, gisa2);
         let body = reqwest::blocking::get(&url)?.text()?;
         let document = Html::parse_document(&body);

@@ -636,7 +636,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             break 'outer;
         }
         let matches = c.find_all(Locator::Css("div.live_detail")).await.expect("div.live_detail 요소를 찾는 중 오류가 발생했습니다.");
-        for match_element in matches {
+        for match_element in &matches {
             let text = match match_element.text().await {
                 Ok(t) => t,
                 Err(_) => continue,
@@ -807,89 +807,102 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             })
             .collect();
 
-        // let mut tiebreaker_name1 = String::new();
-        // let mut tiebreaker_name2 = String::new();
-        // let mut tiebreaker_live_win_probability = 50.0;
-        // for match_element in matches {
-        //     let text = match match_element.text().await {
-        //         Ok(t) => t,
-        //         Err(_) => continue,
-        //     };
+        let mut tiebreaker_name1 = String::new();
+        let mut tiebreaker_name2 = String::new();
+        let mut tiebreaker_live_win_probability = 50.0;
+        for match_element in matches {
+            let text = match match_element.text().await {
+                Ok(t) => t,
+                Err(_) => continue,
+            };
 
-        //     let livedtl_time = match_element.find(Locator::Css("span.livedtl_time")).await.expect("span.livedtl_time 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+            let livedtl_time = match_element.find(Locator::Css("span.livedtl_time")).await.expect("span.livedtl_time 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
 
-        //     let now = chrono::Local::now();
-        //     let livedtl_date = chrono::NaiveDate::parse_from_str(&format!("{} {}", now.format("%Y"), livedtl_time.split(' ').next().unwrap()), "%Y %m-%d").expect("날짜를 파싱하는 데 실패했습니다.");
-        //     let today_20_clock = now.with_hour(20).unwrap().with_minute(0).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
+            let now = chrono::Local::now();
+            let livedtl_date = chrono::NaiveDate::parse_from_str(&format!("{} {}", now.format("%Y"), livedtl_time.split(' ').next().unwrap()), "%Y %m-%d").expect("날짜를 파싱하는 데 실패했습니다.");
+            let today_20_clock = now.with_hour(20).unwrap().with_minute(0).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
 
-        //     if text.contains("KB") || text.contains("韩国围甲") && livedtl_date == now.date_naive() && now >= today_20_clock {
-        //         let b_player = match_element.find(Locator::Css("div.livedtl_first")).await.expect("div.livedtl_first 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-        //         let w_player = match_element.find(Locator::Css("div.livedtl_third")).await.expect("div.livedtl_third 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+            if text.contains("KB") || text.contains("韩国围甲") && livedtl_date == now.date_naive() && now >= today_20_clock {
+                let b_player = match_element.find(Locator::Css("div.livedtl_first")).await.expect("div.livedtl_first 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                let w_player = match_element.find(Locator::Css("div.livedtl_third")).await.expect("div.livedtl_third 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
 
-        //         println!("흑돌 플레이어: {}", b_player);
-        //         println!("백돌 플레이어: {}", w_player);
+                println!("흑돌 플레이어: {}", b_player);
+                println!("백돌 플레이어: {}", w_player);
 
-        //         let relevant_tiebreaker = mapped_tiebreaker_win_probability.iter().find(|tiebreaker| {
-        //             (b_player.contains(tiebreaker.player1().chinese_name()) || w_player.contains(tiebreaker.player1().chinese_name())) &&
-        //             (b_player.contains(tiebreaker.player2().chinese_name()) || w_player.contains(tiebreaker.player2().chinese_name()))
-        //         });
+                let relevant_tiebreaker = mapped_tiebreaker_win_probability.iter().find(|tiebreaker| {
+                    (b_player.contains(tiebreaker.player1().chinese_name()) || w_player.contains(tiebreaker.player1().chinese_name())) &&
+                    (b_player.contains(tiebreaker.player2().chinese_name()) || w_player.contains(tiebreaker.player2().chinese_name()))
+                });
+                if let Some(tiebreaker) = relevant_tiebreaker {
+                    tiebreaker_name1 = tiebreaker.player1().korean_name().clone();
+                    tiebreaker_name2 = tiebreaker.player2().korean_name().clone();
 
-        //         let name1 = relevant_tiebreaker.player1().chinese_name();
-        //         tiebreaker_name1 = relevant_tiebreaker.player1().korean_name();
-        //         tiebreaker_name2 = relevant_tiebreaker.player2().korean_name();
+                    let (name1, elo1, elo2) = if text.contains(tiebreaker.player1().chinese_name()) {
+                        (
+                            tiebreaker.player1().chinese_name(),
+                            tiebreaker.player1().elo_rating() + tiebreaker.player1().condition_weight() + tiebreaker.player1().bullet_weight(),
+                            tiebreaker.player2().elo_rating() + tiebreaker.player2().condition_weight() + tiebreaker.player2().bullet_weight()
+                        )
+                    } else {
+                        (tiebreaker.player1().chinese_name(), 0.0, 0.0)
+                    };
 
-        //         c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_millis(100)), Some(Duration::from_millis(100)), Some(Duration::from_millis(100)))).await.expect("타임아웃 설정 실패");
-        //         if match_element.find(Locator::Css("div.progress_bar_text_box")).await.is_ok() {
-        //             c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
-        //             let ai_title_font = match match_element.find(Locator::Css("span.overwrap.flex_item.center")).await {
-        //                 Ok(element) => {
-        //                     let ai_title_font_text = element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-        //                     ai_title_font_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.")
-        //                 },
-        //                 Err(_) => 0.0,
-        //             };
-        //             let now_sn_text = match_element.find(Locator::Css("span.overwrap.flex_item:not(.center):not(.text_right)")).await.expect("span.overwrap.flex_item:not(.center):not(.text_right) 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-        //             let now_sn = now_sn_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
-        //             let ai_bwin_text = match_element.find(Locator::Css("span.progress_bar_text.left")).await.expect("span.progress_bar_text.left 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-        //             let ai_bwin = ai_bwin_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
-        //             let ai_wwin_text = match_element.find(Locator::Css("span.progress_bar_text.right")).await.expect("span.progress_bar_text.right 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-        //             let ai_wwin = ai_wwin_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
-        //             let ai_win = if b_player.contains(name1) {
-        //                 ai_bwin
-        //             } else if w_player.contains(name1) {
-        //                 ai_wwin
-        //             } else {
-        //                 50.0
-        //             };
+                    c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_millis(100)), Some(Duration::from_millis(100)), Some(Duration::from_millis(100)))).await.expect("타임아웃 설정 실패");
+                    if match_element.find(Locator::Css("div.progress_bar_text_box")).await.is_ok() {
+                        c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
+                        let ai_title_font = match match_element.find(Locator::Css("span.overwrap.flex_item.center")).await {
+                            Ok(element) => {
+                                let ai_title_font_text = element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                                ai_title_font_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.")
+                            },
+                            Err(_) => 0.0,
+                        };
+                        let now_sn_text = match_element.find(Locator::Css("span.overwrap.flex_item:not(.center):not(.text_right)")).await.expect("span.overwrap.flex_item:not(.center):not(.text_right) 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                        let now_sn = now_sn_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
+                        let ai_bwin_text = match_element.find(Locator::Css("span.progress_bar_text.left")).await.expect("span.progress_bar_text.left 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                        let ai_bwin = ai_bwin_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
+                        let ai_wwin_text = match_element.find(Locator::Css("span.progress_bar_text.right")).await.expect("span.progress_bar_text.right 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+                        let ai_wwin = ai_wwin_text.chars().filter(|c| c.is_digit(10) || *c == '.').collect::<String>().parse::<f64>().expect("숫자로 변환하는 데 실패했습니다.");
+                        let ai_win = if b_player.contains(name1) {
+                            ai_bwin
+                        } else if w_player.contains(name1) {
+                            ai_wwin
+                        } else {
+                            50.0
+                        };
 
-        //             let current_elo_win_probability = relevant_tiebreaker.expect("REASON").win_probability();
-        //             tiebreaker_live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + 1.0);
-        //         } else {
-        //             c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
-        //             let winner = if let Ok(element) = match_element.find(Locator::Css("span.livedtl_tag_black")).await {
-        //                 element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.")
-        //             } else {
-        //                 continue;
-        //             };
+                        let current_elo_win_probability = tiebreaker.win_probability();
+                        // tiebreaker_live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + 1.0);
+                        tiebreaker_live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (5.152 + (-0.0883 * current_elo_win_probability) + (-0.0883 * ai_win) + (0.000339 * current_elo_win_probability * current_elo_win_probability) + (0.000339 * ai_win * ai_win) + (0.0010875 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (5.152 + (-0.0883 * current_elo_win_probability) + (-0.0883 * ai_win) + (0.000339 * current_elo_win_probability * current_elo_win_probability) + (0.000339 * ai_win * ai_win) + (0.0010875 * current_elo_win_probability * ai_win)) + 1.0)
+                    } else {
+                        c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
+                        let winner = if let Ok(element) = match_element.find(Locator::Css("span.livedtl_tag_black")).await {
+                            element.text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.")
+                        } else {
+                            continue;
+                        };
 
-        //             if winner.contains("黑胜") || winner.contains("黑中盘胜") {
-        //                 if b_player.contains(name1) {
-        //                     tiebreaker_live_win_probability = 100.0;
-        //                 } else if w_player.contains(name1) {
-        //                     tiebreaker_live_win_probability = 0.0;
-        //                 }
-        //             } else if winner.contains("白胜") || winner.contains("白中盘胜") {
-        //                 if b_player.contains(name1) {
-        //                     tiebreaker_live_win_probability = 0.0;
-        //                 } else if w_player.contains(name1) {
-        //                     tiebreaker_live_win_probability = 100.0;
-        //                 }
-        //             } else {
-        //                 continue;
-        //             };
-        //         }
-        //     }
-        // }
+                        if winner.contains("黑胜") || winner.contains("黑中盘胜") {
+                            if b_player.contains(name1) {
+                                tiebreaker_live_win_probability = 100.0;
+                            } else if w_player.contains(name1) {
+                                tiebreaker_live_win_probability = 0.0;
+                            }
+                        } else if winner.contains("白胜") || winner.contains("白中盘胜") {
+                            if b_player.contains(name1) {
+                                tiebreaker_live_win_probability = 0.0;
+                            } else if w_player.contains(name1) {
+                                tiebreaker_live_win_probability = 100.0;
+                            }
+                        } else {
+                            continue;
+                        };
+                    }
+                } else {
+                    continue;
+                }
+            }
+        }
 
         let team1_tiebreaker_details = mapped_tiebreaker_win_probability.iter()
             .fold(HashMap::<String, Vec<&TiebreakerRelativity>>::new(), |mut acc, relativity| {
@@ -975,22 +988,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             .filter_map(|detail| detail.as_ref())
             .map(|detail| detail.player2().korean_name().to_string())
             .collect();
-        let tiebreaker_details = if live_match_result.two_two_probability() > 0.0 {
-            format!("5국 초속기(bullet): ({}) vs ({}) (승리확률: {:.2}%)",
-                player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
-                player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
-                live_match_result.tiebreaker_win_probability()
-            )
-        } else {
-            String::new()
-        };
-        // let tiebreaker_details = if !tiebreaker_name1.is_empty() {
-        //     format!("5국 초속기(bullet): {} vs {} (승리확률: {:.2}%)",
-        //         tiebreaker_name1,
-        //         tiebreaker_name2,
-        //         tiebreaker_live_win_probability
-        //     )
-        // } else if live_match_result.two_two_probability() > 0.0  {
+        // let tiebreaker_details = if live_match_result.two_two_probability() > 0.0 {
         //     format!("5국 초속기(bullet): ({}) vs ({}) (승리확률: {:.2}%)",
         //         player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
         //         player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
@@ -999,6 +997,21 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
         // } else {
         //     String::new()
         // };
+        let tiebreaker_details = if !tiebreaker_name1.is_empty() {
+            format!("5국 초속기(bullet): {} vs {} (승리확률: {:.2}%)",
+                tiebreaker_name1,
+                tiebreaker_name2,
+                tiebreaker_live_win_probability
+            )
+        } else if live_match_result.two_two_probability() > 0.0  {
+            format!("5국 초속기(bullet): ({}) vs ({}) (승리확률: {:.2}%)",
+                player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
+                player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
+                live_match_result.tiebreaker_win_probability()
+            )
+        } else {
+            String::new()
+        };
 
         let output = format!(
             "========================\n\
@@ -1019,25 +1032,25 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             ========================",
             live_match_result.first_rapid().player1().korean_name(),
             live_match_result.first_rapid().player2().korean_name(),
-            chrono::Utc::now().year() - 1,
+            chrono::Utc::now().year() - 3,
             live_match_result.first_rapid().player1_wins(),
             live_match_result.first_rapid().player2_wins(),
             live_match_result.first_rapid_win_probability(),
             live_match_result.second_blitz().player1().korean_name(),
             live_match_result.second_blitz().player2().korean_name(),
-            chrono::Utc::now().year() - 1,
+            chrono::Utc::now().year() - 3,
             live_match_result.second_blitz().player1_wins(),
             live_match_result.second_blitz().player2_wins(),
             live_match_result.second_blitz_win_probability(),
             live_match_result.third_blitz().player1().korean_name(),
             live_match_result.third_blitz().player2().korean_name(),
-            chrono::Utc::now().year() - 1,
+            chrono::Utc::now().year() - 3,
             live_match_result.third_blitz().player1_wins(),
             live_match_result.third_blitz().player2_wins(),
             live_match_result.third_blitz_win_probability(),
             live_match_result.forth_blitz().player1().korean_name(),
             live_match_result.forth_blitz().player2().korean_name(),
-            chrono::Utc::now().year() - 1,
+            chrono::Utc::now().year() - 3,
             live_match_result.forth_blitz().player1_wins(),
             live_match_result.forth_blitz().player2_wins(),
             live_match_result.forth_blitz_win_probability(),

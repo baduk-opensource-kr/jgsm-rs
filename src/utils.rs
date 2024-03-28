@@ -77,7 +77,7 @@ pub fn fetch_player_ratings_on_baeteil() -> Result<HashMap<String, f64>, Box<dyn
                 let name = name_element.inner_html();
                 let rating_str = rating_element.inner_html().chars().filter(|c| c.is_digit(10)).collect::<String>();
                 if let Ok(rating) = rating_str.parse::<f64>() {
-                    ratings.insert(name, rating / 1.3);
+                    ratings.insert(name, rating * 0.75);
                 }
             }
         }
@@ -154,11 +154,25 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
     for team in selected_teams.iter_mut() {
         for player in team.players_mut().iter_mut() {
             if let Some(&rating) = player_ratings_on_baeteil.get(player.korean_name()) {
-                player.set_elo_rating(rating);
+                match get_recent_record(player.korean_name(), rating, &player_ratings_on_baeteil) {
+                    Ok(current_rating) => {
+                        player.set_elo_rating(current_rating);
+                    },
+                    Err(_) => {
+                        player.set_elo_rating(rating);
+                    }
+                }
                 player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()));
                 player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) * 2.0);
             } else if let Some(&rating) = player_ratings_on_goratings.get(player.english_name()) {
-                player.set_elo_rating(rating + goratings_to_baeteil);
+                match get_recent_record(player.korean_name(), rating + goratings_to_baeteil, &player_ratings_on_baeteil) {
+                    Ok(current_rating) => {
+                        player.set_elo_rating(current_rating);
+                    },
+                    Err(_) => {
+                        player.set_elo_rating(rating + goratings_to_baeteil);
+                    }
+                }
                 player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()));
                 player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) * 2.0);
             }
@@ -1059,4 +1073,49 @@ fn speed_aging_curve(days_since_birth: f64) -> f64 {
     let k5: f64 = -81.51;
 
     k1 / (1.0 + E.powf(-k2 * (days_since_birth - k3))) + k4 * days_since_birth + k5
+}
+
+pub fn get_recent_record(gisa1: &str, mut gisa1_rating: f64, rating_list: &HashMap<String, f64>) -> Result<f64, Box<dyn Error>> {
+    let current_year = chrono::Utc::now().year();
+    let current_month = format!("{:02}.", chrono::Utc::now().month());
+
+    let url = format!("https://cyberoro.com/cooperate/giwon/gibo_M_in.oro?ydate={}&gisa1={}&listCnt=20&P_KEY=0", current_year, gisa1);
+    let body = reqwest::blocking::get(&url)?.text()?;
+    let document = Html::parse_document(&body);
+
+    let match_selector = Selector::parse("tr").unwrap();
+    let date_selector = Selector::parse("th.tb-date").unwrap();
+    let player_selector = Selector::parse("td.text-center>span").unwrap();
+    let winner_selector = Selector::parse("span[style='color:#1c97fe']").unwrap();
+
+    let matches: Vec<_> = document.select(&match_selector).collect();
+    let mut matches_to_process = Vec::new();
+
+    for (index, selected_match) in matches.iter().enumerate() {
+        if let Some(date_cell) = selected_match.select(&date_selector).next() {
+            let date_text = date_cell.text().collect::<String>();
+            if date_text.contains(&current_month) && index + 1 < matches.len() {
+                matches_to_process.push(&matches[index + 1]);
+            }
+        }
+    }
+
+    for selected_match in matches_to_process.iter().rev() {
+        let match_text = selected_match.text().collect::<Vec<_>>().join(" ");
+        if match_text.contains(gisa1) {
+            let players = selected_match.select(&player_selector).collect::<Vec<_>>();
+            let winner_text = selected_match.select(&winner_selector).next().unwrap().text().collect::<String>();
+            
+            let gisa2 = players.iter()
+                .find(|p| !p.text().collect::<String>().contains(&winner_text))
+                .map_or_else(|| "".to_string(), |p| p.text().collect::<String>());
+            if let Some(gisa2_rating) = rating_list.get(&gisa2) {
+                let is_win = if winner_text.contains(gisa1) { 1.0 } else { 0.0 };
+                let win_probability = calculate_win_probability(gisa1_rating, *gisa2_rating);
+                gisa1_rating += is_win - win_probability;
+            }
+        }
+    }
+
+    Ok(gisa1_rating)
 }

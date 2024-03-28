@@ -40,7 +40,7 @@ fn main() {
             Player::new("최철한".to_string(), "Choi Cheolhan".to_string(), "崔哲瀚".to_string(), NaiveDate::from_ymd_opt(1985, 3, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0),
             Player::new("박종훈".to_string(), "Park Jonghoon".to_string(), "朴钟勋".to_string(), NaiveDate::from_ymd_opt(2000, 1, 14).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0),
             Player::new("엄동건".to_string(), "Eom Donggeon".to_string(), "严动虔".to_string(), NaiveDate::from_ymd_opt(2000, 6, 9).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("쉬하오훙".to_string(), "Xu Haohong".to_string(), "許皓鋐".to_string(), NaiveDate::from_ymd_opt(2001, 4, 30).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0),
+            Player::new("쉬하오훙".to_string(), "Xu Haohong".to_string(), "许皓鋐".to_string(), NaiveDate::from_ymd_opt(2001, 4, 30).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0),
         ]
     ));
     teams.push(Team::new(

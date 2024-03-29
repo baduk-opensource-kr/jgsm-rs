@@ -1,4 +1,4 @@
-use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team, TiebreakerRelativity};
+use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team, TeamRelativity, TiebreakerRelativity};
 use crossterm::{
     execute,
     terminal::{Clear, ClearType},
@@ -642,13 +642,17 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                 Err(_) => continue,
             };
 
-            let livedtl_time = match_element.find(Locator::Css("span.livedtl_time")).await.expect("span.livedtl_time 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+            let livedtl_el = match_element.find(Locator::Css("span.livedtl_time")).await.expect("span.livedtl_time 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
 
             let now = chrono::Local::now();
-            let livedtl_date = chrono::NaiveDate::parse_from_str(&format!("{} {}", now.format("%Y"), livedtl_time.split(' ').next().unwrap()), "%Y %m-%d").expect("날짜를 파싱하는 데 실패했습니다.");
+            let livedtl_date = chrono::NaiveDate::parse_from_str(&format!("{} {}", now.format("%Y"), livedtl_el.split(' ').next().unwrap()), "%Y %m-%d").expect("날짜를 파싱하는 데 실패했습니다.");
+            let livedtl_time = livedtl_el.split(' ').nth(1).unwrap();
+            let livedtl_hour = livedtl_time.split(':').next().unwrap().parse::<u32>().expect("시간을 파싱하는 데 실패했습니다.");
+            let livedtl_minute = livedtl_time.split(':').nth(1).unwrap().parse::<u32>().expect("분을 파싱하는 데 실패했습니다.");
             let today_20_clock = now.with_hour(20).unwrap().with_minute(0).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
+            let livedtl_datetime = now.with_hour(livedtl_hour).unwrap().with_minute(livedtl_minute).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
 
-            if text.contains("KB") || text.contains("韩国围甲") && livedtl_date == now.date_naive() && now < today_20_clock {
+            if text.contains("KB") || text.contains("韩国围甲") && livedtl_date == now.date_naive() && livedtl_datetime < today_20_clock {
                 let mut live_win_probability = 50.0;
                 let (name1, elo1, elo2) = if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
                     (
@@ -679,7 +683,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                 };
                 let b_player = match_element.find(Locator::Css("div.livedtl_first")).await.expect("div.livedtl_first 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
                 let w_player = match_element.find(Locator::Css("div.livedtl_third")).await.expect("div.livedtl_third 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
-                c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_millis(100)), Some(Duration::from_millis(100)), Some(Duration::from_millis(100)))).await.expect("타임아웃 설정 실패");
+                c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_millis(500)), Some(Duration::from_millis(500)), Some(Duration::from_millis(500)))).await.expect("타임아웃 설정 실패");
                 if match_element.find(Locator::Css("div.progress_bar_text_box")).await.is_ok() {
                     c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
                     let ai_title_font = match match_element.find(Locator::Css("span.overwrap.flex_item.center")).await {
@@ -714,7 +718,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                         50.0
                     };
 
-                    live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (5.152 + (-0.0883 * current_elo_win_probability) + (-0.0883 * ai_win) + (0.000339 * current_elo_win_probability * current_elo_win_probability) + (0.000339 * ai_win * ai_win) + (0.0010875 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (5.152 + (-0.0883 * current_elo_win_probability) + (-0.0883 * ai_win) + (0.000339 * current_elo_win_probability * current_elo_win_probability) + (0.000339 * ai_win * ai_win) + (0.0010875 * current_elo_win_probability * ai_win)) + 1.0)
+                    live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (-0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (-0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + 1.0)
                 } else {
                     c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
                     let winner = if let Ok(element) = match_element.find(Locator::Css("span.livedtl_tag_black")).await {
@@ -816,13 +820,17 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                 Err(_) => continue,
             };
 
-            let livedtl_time = match_element.find(Locator::Css("span.livedtl_time")).await.expect("span.livedtl_time 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
+            let livedtl_el = match_element.find(Locator::Css("span.livedtl_time")).await.expect("span.livedtl_time 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
 
             let now = chrono::Local::now();
-            let livedtl_date = chrono::NaiveDate::parse_from_str(&format!("{} {}", now.format("%Y"), livedtl_time.split(' ').next().unwrap()), "%Y %m-%d").expect("날짜를 파싱하는 데 실패했습니다.");
+            let livedtl_date = chrono::NaiveDate::parse_from_str(&format!("{} {}", now.format("%Y"), livedtl_el.split(' ').next().unwrap()), "%Y %m-%d").expect("날짜를 파싱하는 데 실패했습니다.");
+            let livedtl_time = livedtl_el.split(' ').nth(1).unwrap();
+            let livedtl_hour = livedtl_time.split(':').next().unwrap().parse::<u32>().expect("시간을 파싱하는 데 실패했습니다.");
+            let livedtl_minute = livedtl_time.split(':').nth(1).unwrap().parse::<u32>().expect("분을 파싱하는 데 실패했습니다.");
             let today_20_clock = now.with_hour(20).unwrap().with_minute(0).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
+            let livedtl_datetime = now.with_hour(livedtl_hour).unwrap().with_minute(livedtl_minute).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
 
-            if text.contains("KB") || text.contains("韩国围甲") && livedtl_date == now.date_naive() && now >= today_20_clock {
+            if text.contains("KB") || text.contains("韩国围甲") && livedtl_date == now.date_naive() && livedtl_datetime < today_20_clock {
                 let b_player = match_element.find(Locator::Css("div.livedtl_first")).await.expect("div.livedtl_first 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
                 let w_player = match_element.find(Locator::Css("div.livedtl_third")).await.expect("div.livedtl_third 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
 
@@ -847,7 +855,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                         (tiebreaker.player1().chinese_name(), 0.0, 0.0)
                     };
 
-                    c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_millis(100)), Some(Duration::from_millis(100)), Some(Duration::from_millis(100)))).await.expect("타임아웃 설정 실패");
+                    c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_millis(500)), Some(Duration::from_millis(500)), Some(Duration::from_millis(500)))).await.expect("타임아웃 설정 실패");
                     if match_element.find(Locator::Css("div.progress_bar_text_box")).await.is_ok() {
                         c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
                         let ai_title_font = match match_element.find(Locator::Css("span.overwrap.flex_item.center")).await {
@@ -873,7 +881,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
 
                         let current_elo_win_probability = tiebreaker.win_probability();
                         // tiebreaker_live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + 1.0);
-                        tiebreaker_live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (5.152 + (-0.0883 * current_elo_win_probability) + (-0.0883 * ai_win) + (0.000339 * current_elo_win_probability * current_elo_win_probability) + (0.000339 * ai_win * ai_win) + (0.0010875 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (5.152 + (-0.0883 * current_elo_win_probability) + (-0.0883 * ai_win) + (0.000339 * current_elo_win_probability * current_elo_win_probability) + (0.000339 * ai_win * ai_win) + (0.0010875 * current_elo_win_probability * ai_win)) + 1.0)
+                        tiebreaker_live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (-0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (-0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + 1.0)
                     } else {
                         c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
                         let winner = if let Ok(element) = match_element.find(Locator::Css("span.livedtl_tag_black")).await {
@@ -1131,4 +1139,43 @@ pub fn get_recent_record(gisa1: &str, mut gisa1_rating: f64, rating_list: &HashM
     }
 
     Ok(gisa1_rating)
+}
+
+pub fn create_excel_from_team(team_relativities_matrix: Vec<Vec<TeamRelativity>>) -> Result<(), Box<dyn std::error::Error>> {
+    let workbook = Workbook::new("team_relativities.xlsx")?;
+    let mut worksheet = workbook.add_worksheet(Some("팀 승률"))?;
+
+    let mut team1_names = HashSet::new();
+    let mut team2_names = HashSet::new();
+
+    for team_relativity_row in &team_relativities_matrix {
+        for team_relativity in team_relativity_row {
+            team1_names.insert(team_relativity.team1().team_name().clone());
+            team2_names.insert(team_relativity.team2().team_name().clone());
+        }
+    }
+
+    let team1_names: Vec<_> = team1_names.into_iter().collect();
+    let team2_names: Vec<_> = team2_names.into_iter().collect();
+
+    for (index, team_name) in team1_names.iter().enumerate() {
+        worksheet.write_string(0, (index + 1) as u16, team_name, None)?;
+    }
+
+    for (index, team_name) in team2_names.iter().enumerate() {
+        worksheet.write_string((index + 1) as u32, 0, team_name, None)?;
+    }
+
+    for team_relativity_row in &team_relativities_matrix {
+        for team_relativity in team_relativity_row {
+            let team1_index = team1_names.iter().position(|name| name == team_relativity.team1().team_name()).unwrap();
+            let team2_index = team2_names.iter().position(|name| name == team_relativity.team2().team_name()).unwrap();
+
+            worksheet.write_number((team2_index + 1) as u32, (team1_index + 1) as u16, team_relativity.win_probability(), None)?;
+        }
+    }
+
+    workbook.close()?;
+
+    Ok(())
 }

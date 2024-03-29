@@ -97,6 +97,32 @@ impl Player {
     }
 }
 
+#[derive(Clone)]
+pub struct TeamRelativity {
+    team1: Team,
+    team2: Team,
+    win_probability: f64,
+}
+
+impl TeamRelativity {
+    pub fn new(team1: Team, team2: Team, win_probability: f64) -> TeamRelativity {
+        TeamRelativity { team1, team2, win_probability }
+    }
+
+    pub fn team1(&self) -> &Team {
+        &self.team1
+    }
+
+    pub fn team2(&self) -> &Team {
+        &self.team2
+    }
+
+    pub fn win_probability(&self) -> f64 {
+        self.win_probability
+    }
+}
+
+#[derive(Clone, PartialEq)]
 pub struct Team {
     team_name: String,
     players: Vec<Player>,

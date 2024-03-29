@@ -654,3 +654,155 @@ impl TiebreakerRelativity {
 //         &self.fifth_bullet
 //     }
 // }
+
+pub struct WPAResult {
+    first_rapid_player1_wpa: f64,
+    first_rapid_player1_score: f64,
+    first_rapid_player2_wpa: f64,
+    first_rapid_player2_score: f64,
+    second_blitz_player1_wpa: f64,
+    second_blitz_player1_score: f64,
+    second_blitz_player2_wpa: f64,
+    second_blitz_player2_score: f64,
+    third_blitz_player1_wpa: f64,
+    third_blitz_player1_score: f64,
+    third_blitz_player2_wpa: f64,
+    third_blitz_player2_score: f64,
+    forth_blitz_player1_wpa: f64,
+    forth_blitz_player1_score: f64,
+    forth_blitz_player2_wpa: f64,
+    forth_blitz_player2_score: f64,
+    fifth_bullet_player1_wpa: f64,
+    fifth_bullet_player1_score: f64,
+    fifth_bullet_player2_wpa: f64,
+    fifth_bullet_player2_score: f64,
+}
+
+impl WPAResult {
+    pub fn new(
+        first_rapid_player1_wpa: f64,
+        first_rapid_player1_score: f64,
+        first_rapid_player2_wpa: f64,
+        first_rapid_player2_score: f64,
+        second_blitz_player1_wpa: f64,
+        second_blitz_player1_score: f64,
+        second_blitz_player2_wpa: f64,
+        second_blitz_player2_score: f64,
+        third_blitz_player1_wpa: f64,
+        third_blitz_player1_score: f64,
+        third_blitz_player2_wpa: f64,
+        third_blitz_player2_score: f64,
+        forth_blitz_player1_wpa: f64,
+        forth_blitz_player1_score: f64,
+        forth_blitz_player2_wpa: f64,
+        forth_blitz_player2_score: f64,
+        fifth_bullet_player1_wpa: f64,
+        fifth_bullet_player1_score: f64,
+        fifth_bullet_player2_wpa: f64,
+        fifth_bullet_player2_score: f64,
+    ) -> Self {
+        Self {
+            first_rapid_player1_wpa,
+            first_rapid_player1_score,
+            first_rapid_player2_wpa,
+            first_rapid_player2_score,
+            second_blitz_player1_wpa,
+            second_blitz_player1_score,
+            second_blitz_player2_wpa,
+            second_blitz_player2_score,
+            third_blitz_player1_wpa,
+            third_blitz_player1_score,
+            third_blitz_player2_wpa,
+            third_blitz_player2_score,
+            forth_blitz_player1_wpa,
+            forth_blitz_player1_score,
+            forth_blitz_player2_wpa,
+            forth_blitz_player2_score,
+            fifth_bullet_player1_wpa,
+            fifth_bullet_player1_score,
+            fifth_bullet_player2_wpa,
+            fifth_bullet_player2_score,
+        }
+    }
+
+    pub fn first_rapid_player1_wpa(&self) -> f64 {
+        self.first_rapid_player1_wpa
+    }
+
+    pub fn first_rapid_player1_score(&self) -> f64 {
+        self.first_rapid_player1_score
+    }
+
+    pub fn first_rapid_player2_wpa(&self) -> f64 {
+        self.first_rapid_player2_wpa
+    }
+
+    pub fn first_rapid_player2_score(&self) -> f64 {
+        self.first_rapid_player2_score
+    }
+
+    pub fn second_blitz_player1_wpa(&self) -> f64 {
+        self.second_blitz_player1_wpa
+    }
+
+    pub fn second_blitz_player1_score(&self) -> f64 {
+        self.second_blitz_player1_score
+    }
+
+    pub fn second_blitz_player2_wpa(&self) -> f64 {
+        self.second_blitz_player2_wpa
+    }
+
+    pub fn second_blitz_player2_score(&self) -> f64 {
+        self.second_blitz_player2_score
+    }
+
+    pub fn third_blitz_player1_wpa(&self) -> f64 {
+        self.third_blitz_player1_wpa
+    }
+
+    pub fn third_blitz_player1_score(&self) -> f64 {
+        self.third_blitz_player1_score
+    }
+
+    pub fn third_blitz_player2_wpa(&self) -> f64 {
+        self.third_blitz_player2_wpa
+    }
+
+    pub fn third_blitz_player2_score(&self) -> f64 {
+        self.third_blitz_player2_score
+    }
+
+    pub fn forth_blitz_player1_wpa(&self) -> f64 {
+        self.forth_blitz_player1_wpa
+    }
+
+    pub fn forth_blitz_player1_score(&self) -> f64 {
+        self.forth_blitz_player1_score
+    }
+
+    pub fn forth_blitz_player2_wpa(&self) -> f64 {
+        self.forth_blitz_player2_wpa
+    }
+
+    pub fn forth_blitz_player2_score(&self) -> f64 {
+        self.forth_blitz_player2_score
+    }
+
+    pub fn fifth_bullet_player1_wpa(&self) -> f64 {
+        self.fifth_bullet_player1_wpa
+    }
+
+    pub fn fifth_bullet_player1_score(&self) -> f64 {
+        self.fifth_bullet_player1_score
+    }
+
+    pub fn fifth_bullet_player2_wpa(&self) -> f64 {
+        self.fifth_bullet_player2_wpa
+    }
+
+    pub fn fifth_bullet_player2_score(&self) -> f64 {
+        self.fifth_bullet_player2_score
+    }
+}
+

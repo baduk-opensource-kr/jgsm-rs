@@ -1,4 +1,4 @@
-use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team, TeamRelativity, TiebreakerRelativity};
+use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team, TeamRelativity, TiebreakerRelativity, WPAResult};
 use crossterm::{
     execute,
     terminal::{Clear, ClearType},
@@ -880,7 +880,6 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                         };
 
                         let current_elo_win_probability = tiebreaker.win_probability();
-                        // tiebreaker_live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * 0.0000005 + 1.0);
                         tiebreaker_live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (-0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (-0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + 1.0)
                     } else {
                         c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
@@ -996,15 +995,6 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             .filter_map(|detail| detail.as_ref())
             .map(|detail| detail.player2().korean_name().to_string())
             .collect();
-        // let tiebreaker_details = if live_match_result.two_two_probability() > 0.0 {
-        //     format!("5국 초속기(bullet): ({}) vs ({}) (승리확률: {:.2}%)",
-        //         player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
-        //         player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
-        //         live_match_result.tiebreaker_win_probability()
-        //     )
-        // } else {
-        //     String::new()
-        // };
         let tiebreaker_details = if !tiebreaker_name1.is_empty() {
             format!("5국 초속기(bullet): {} vs {} (승리확률: {:.2}%)",
                 tiebreaker_name1,
@@ -1021,12 +1011,137 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             String::new()
         };
 
+        let wpa_result = (|| {
+            let mut match_result_for_first_rapid_wpa = match_result.clone();
+            let mut match_result_for_first_rapid_zero = match_result.clone();
+            let mut match_result_for_first_rapid_one = match_result.clone();
+            match_result_for_first_rapid_wpa.set_first_rapid_win_probability(live_match_result.first_rapid_win_probability());
+            match_result_for_first_rapid_zero.set_first_rapid_win_probability(0.0);
+            match_result_for_first_rapid_one.set_first_rapid_win_probability(100.0);
+            let mut match_result_for_second_blitz_wpa = match_result.clone();
+            let mut match_result_for_second_blitz_zero = match_result.clone();
+            let mut match_result_for_second_blitz_one = match_result.clone();
+            match_result_for_second_blitz_wpa.set_second_blitz_win_probability(live_match_result.second_blitz_win_probability());
+            match_result_for_second_blitz_zero.set_second_blitz_win_probability(0.0);
+            match_result_for_second_blitz_one.set_second_blitz_win_probability(100.0);
+            let mut match_result_for_third_blitz_wpa = match_result.clone();
+            let mut match_result_for_third_blitz_zero = match_result.clone();
+            let mut match_result_for_third_blitz_one = match_result.clone();
+            match_result_for_third_blitz_wpa.set_third_blitz_win_probability(live_match_result.third_blitz_win_probability());
+            match_result_for_third_blitz_zero.set_third_blitz_win_probability(0.0);
+            match_result_for_third_blitz_one.set_third_blitz_win_probability(100.0);
+            let mut match_result_for_forth_blitz_wpa = match_result.clone();
+            let mut match_result_for_forth_blitz_zero = match_result.clone();
+            let mut match_result_for_forth_blitz_one = match_result.clone();
+            match_result_for_forth_blitz_wpa.set_forth_blitz_win_probability(live_match_result.forth_blitz_win_probability());
+            match_result_for_forth_blitz_zero.set_forth_blitz_win_probability(0.0);
+            match_result_for_forth_blitz_one.set_forth_blitz_win_probability(100.0);
+
+            let (win_prob, team1_score, team2_score) = get_total_win_probability(match_result.clone(), &player_relativities);
+            let (
+                first_rapid_player1_wpa,
+                first_rapid_player1_score,
+                first_rapid_player2_wpa,
+                first_rapid_player2_score,
+                second_blitz_player1_wpa,
+                second_blitz_player1_score,
+                second_blitz_player2_wpa,
+                second_blitz_player2_score,
+                third_blitz_player1_wpa,
+                third_blitz_player1_score,
+                third_blitz_player2_wpa,
+                third_blitz_player2_score,
+                forth_blitz_player1_wpa,
+                forth_blitz_player1_score,
+                forth_blitz_player2_wpa,
+                forth_blitz_player2_score
+            ) = (|| {
+                let (first_rapid_win_prob, first_rapid_team1_score, first_rapid_team2_score) = get_total_win_probability(match_result_for_first_rapid_wpa, &player_relativities);
+                let (second_blitz_win_prob, second_blitz_team1_score, second_blitz_team2_score) = get_total_win_probability(match_result_for_second_blitz_wpa, &player_relativities);
+                let (third_blitz_win_prob, third_blitz_team1_score, third_blitz_team2_score) = get_total_win_probability(match_result_for_third_blitz_wpa, &player_relativities);
+                let (forth_blitz_win_prob, forth_blitz_team1_score, forth_blitz_team2_score) = get_total_win_probability(match_result_for_forth_blitz_wpa, &player_relativities);
+                let (_, first_rapid_team1_zero, _) = get_total_win_probability(match_result_for_first_rapid_zero, &player_relativities);
+                let (_, second_blitz_team1_zero, _) = get_total_win_probability(match_result_for_second_blitz_zero, &player_relativities);
+                let (_, third_blitz_team1_zero, _) = get_total_win_probability(match_result_for_third_blitz_zero, &player_relativities);
+                let (_, forth_blitz_team1_zero, _) = get_total_win_probability(match_result_for_forth_blitz_zero, &player_relativities);
+                let (_, _, first_rapid_team2_zero) = get_total_win_probability(match_result_for_first_rapid_one, &player_relativities);
+                let (_, _, second_blitz_team2_zero) = get_total_win_probability(match_result_for_second_blitz_one, &player_relativities);
+                let (_, _, third_blitz_team2_zero) = get_total_win_probability(match_result_for_third_blitz_one, &player_relativities);
+                let (_, _, forth_blitz_team2_zero) = get_total_win_probability(match_result_for_forth_blitz_one, &player_relativities);
+                let average_team1_score = (first_rapid_team1_score + second_blitz_team1_score + third_blitz_team1_score + forth_blitz_team1_score - team1_score * 4.0) / 4.0;
+                let average_team2_score = (first_rapid_team2_score + second_blitz_team2_score + third_blitz_team2_score + forth_blitz_team2_score - team2_score * 4.0) / 4.0;
+                let (
+                    team1_first_rapid_score,
+                    team1_second_blitz_score,
+                    team1_third_blitz_score,
+                    team1_forth_blitz_score
+                ) = redistribute_scores(
+                    first_rapid_team1_score - first_rapid_team1_zero + first_rapid_team1_score - team1_score - average_team1_score,
+                    second_blitz_team1_score - second_blitz_team1_zero + second_blitz_team1_score - team1_score - average_team1_score,
+                    third_blitz_team1_score - third_blitz_team1_zero + third_blitz_team1_score - team1_score - average_team1_score,
+                    forth_blitz_team1_score - forth_blitz_team1_zero + forth_blitz_team1_score - team1_score - average_team1_score
+                );
+                let (
+                    team2_first_rapid_score,
+                    team2_second_blitz_score,
+                    team2_third_blitz_score,
+                    team2_forth_blitz_score
+                ) = redistribute_scores(
+                    first_rapid_team2_score - first_rapid_team2_zero + first_rapid_team2_score - team2_score - average_team2_score,
+                    second_blitz_team2_score - second_blitz_team2_zero + second_blitz_team2_score - team2_score - average_team2_score,
+                    third_blitz_team2_score - third_blitz_team2_zero + third_blitz_team2_score - team2_score - average_team2_score,
+                    forth_blitz_team2_score - forth_blitz_team2_zero + forth_blitz_team2_score - team2_score - average_team2_score
+                );
+                (
+                    first_rapid_win_prob - win_prob,
+                    team1_first_rapid_score,
+                    win_prob - first_rapid_win_prob,
+                    team2_first_rapid_score,
+                    second_blitz_win_prob - win_prob,
+                    team1_second_blitz_score,
+                    win_prob - second_blitz_win_prob,
+                    team2_second_blitz_score,
+                    third_blitz_win_prob - win_prob,
+                    team1_third_blitz_score,
+                    win_prob - third_blitz_win_prob,
+                    team2_third_blitz_score,
+                    forth_blitz_win_prob - win_prob,
+                    team1_forth_blitz_score,
+                    win_prob - forth_blitz_win_prob,
+                    team2_forth_blitz_score
+                )
+            })();
+
+            WPAResult::new(
+                first_rapid_player1_wpa,
+                first_rapid_player1_score,
+                first_rapid_player2_wpa,
+                first_rapid_player2_score,
+                second_blitz_player1_wpa,
+                second_blitz_player1_score,
+                second_blitz_player2_wpa,
+                second_blitz_player2_score,
+                third_blitz_player1_wpa,
+                third_blitz_player1_score,
+                third_blitz_player2_wpa,
+                third_blitz_player2_score,
+                forth_blitz_player1_wpa,
+                forth_blitz_player1_score,
+                forth_blitz_player2_wpa,
+                forth_blitz_player2_score,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            )
+        })();
+
         let output = format!(
             "========================\n\
-            1국 장고(rapid): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-            2국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-            3국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-            4국 속기(blitz): {} vs {} ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+            1국 장고(rapid): {}(WPA: {}%p)(득점: {:.2}) vs {}(WPA: {}%p)(득점: {:.2}) ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+            2국 속기(blitz): {}(WPA: {}%p)(득점: {:.2}) vs {}(WPA: {}%p)(득점: {:.2}) ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+            3국 속기(blitz): {}(WPA: {}%p)(득점: {:.2}) vs {}(WPA: {}%p)(득점: {:.2}) ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
+            4국 속기(blitz): {}(WPA: {}%p)(득점: {:.2}) vs {}(WPA: {}%p)(득점: {:.2}) ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
             {}
             \n4-0: {:.2}%\n\
             3-1: {:.2}%\n\
@@ -1039,25 +1154,73 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             \n현재 스코어: {:.2}-{:.2}\n\
             ========================",
             live_match_result.first_rapid().player1().korean_name(),
+            if wpa_result.first_rapid_player1_wpa() * 100.0 > 0.0 {
+                format!("+{:.2}", wpa_result.first_rapid_player1_wpa() * 100.0)
+            } else {
+                format!("{:.2}", wpa_result.first_rapid_player1_wpa() * 100.0)
+            },
+            wpa_result.first_rapid_player1_score(),
             live_match_result.first_rapid().player2().korean_name(),
+            if wpa_result.first_rapid_player2_wpa() * 100.0 > 0.0 {
+                format!("+{:.2}", wpa_result.first_rapid_player2_wpa() * 100.0)
+            } else {
+                format!("{:.2}", wpa_result.first_rapid_player2_wpa() * 100.0)
+            },
+            wpa_result.first_rapid_player2_score(),
             chrono::Utc::now().year() - 3,
             live_match_result.first_rapid().player1_wins(),
             live_match_result.first_rapid().player2_wins(),
             live_match_result.first_rapid_win_probability(),
             live_match_result.second_blitz().player1().korean_name(),
+            if wpa_result.second_blitz_player1_wpa() * 100.0 > 0.0 {
+                format!("+{:.2}", wpa_result.second_blitz_player1_wpa() * 100.0)
+            } else {
+                format!("{:.2}", wpa_result.second_blitz_player1_wpa() * 100.0)
+            },
+            wpa_result.second_blitz_player1_score(),
             live_match_result.second_blitz().player2().korean_name(),
+            if wpa_result.second_blitz_player2_wpa() * 100.0 > 0.0 {
+                format!("+{:.2}", wpa_result.second_blitz_player2_wpa() * 100.0)
+            } else {
+                format!("{:.2}", wpa_result.second_blitz_player2_wpa() * 100.0)
+            },
+            wpa_result.second_blitz_player2_score(),
             chrono::Utc::now().year() - 3,
             live_match_result.second_blitz().player1_wins(),
             live_match_result.second_blitz().player2_wins(),
             live_match_result.second_blitz_win_probability(),
             live_match_result.third_blitz().player1().korean_name(),
+            if wpa_result.third_blitz_player1_wpa() * 100.0 > 0.0 {
+                format!("+{:.2}", wpa_result.third_blitz_player1_wpa() * 100.0)
+            } else {
+                format!("{:.2}", wpa_result.third_blitz_player1_wpa() * 100.0)
+            },
+            wpa_result.third_blitz_player1_score(),
             live_match_result.third_blitz().player2().korean_name(),
+            if wpa_result.third_blitz_player2_wpa() * 100.0 > 0.0 {
+                format!("+{:.2}", wpa_result.third_blitz_player2_wpa() * 100.0)
+            } else {
+                format!("{:.2}", wpa_result.third_blitz_player2_wpa() * 100.0)
+            },
+            wpa_result.third_blitz_player2_score(),
             chrono::Utc::now().year() - 3,
             live_match_result.third_blitz().player1_wins(),
             live_match_result.third_blitz().player2_wins(),
             live_match_result.third_blitz_win_probability(),
             live_match_result.forth_blitz().player1().korean_name(),
+            if wpa_result.forth_blitz_player1_wpa() * 100.0 > 0.0 {
+                format!("+{:.2}", wpa_result.forth_blitz_player1_wpa() * 100.0)
+            } else {
+                format!("{:.2}", wpa_result.forth_blitz_player1_wpa() * 100.0)
+            },
+            wpa_result.forth_blitz_player1_score(),
             live_match_result.forth_blitz().player2().korean_name(),
+            if wpa_result.forth_blitz_player2_wpa() * 100.0 > 0.0 {
+                format!("+{:.2}", wpa_result.forth_blitz_player2_wpa() * 100.0)
+            } else {
+                format!("{:.2}", wpa_result.forth_blitz_player2_wpa() * 100.0)
+            },
+            wpa_result.forth_blitz_player2_score(),
             chrono::Utc::now().year() - 3,
             live_match_result.forth_blitz().player1_wins(),
             live_match_result.forth_blitz().player2_wins(),
@@ -1178,4 +1341,128 @@ pub fn create_excel_from_team(team_relativities_matrix: Vec<Vec<TeamRelativity>>
     workbook.close()?;
 
     Ok(())
+}
+
+fn get_total_win_probability(match_result: MatchResult, player_relativities: &Vec<PlayerRelativity>) -> (f64, f64, f64) {
+    let win_probabilities = [
+        match_result.first_rapid_win_probability(),
+        match_result.second_blitz_win_probability(),
+        match_result.third_blitz_win_probability(),
+        match_result.forth_blitz_win_probability(),
+    ];
+
+    let mapped_tiebreaker_win_probability: Vec<TiebreakerRelativity> = player_relativities.iter()
+        .map(|relativity| {
+            let player1_position = [
+                match_result.first_rapid().player1().korean_name(),
+                match_result.second_blitz().player1().korean_name(),
+                match_result.third_blitz().player1().korean_name(),
+                match_result.forth_blitz().player1().korean_name(),
+            ].iter().position(|&name| name == relativity.player1().korean_name());
+            let player2_position = [
+                match_result.first_rapid().player2().korean_name(),
+                match_result.second_blitz().player2().korean_name(),
+                match_result.third_blitz().player2().korean_name(),
+                match_result.forth_blitz().player2().korean_name(),
+            ].iter().position(|&name| name == relativity.player2().korean_name());
+
+            let player1_penalty = if let Some(pos) = player1_position {
+                match pos {
+                    0 => (1.0 / 1.04) * (1.0 / (1.0 + (0.04 * (1.0 - match_result.first_rapid_win_probability() / 100.0)))),
+                    1 => (1.0 / 1.02) * (1.0 / (1.0 + (0.02 * (1.0 - match_result.second_blitz_win_probability() / 100.0)))),
+                    2 => (1.0 / 1.08) * (1.0 / (1.0 + (0.08 * (1.0 - match_result.third_blitz_win_probability() / 100.0)))),
+                    3 => (1.0 / 1.08) * (1.0 / (1.0 + (0.08 * (1.0 - match_result.forth_blitz_win_probability() / 100.0)))),
+                    _ => 1.0,
+                }
+            } else {
+                1.0
+            };
+            let player2_penalty = if let Some(pos) = player2_position {
+                match pos {
+                    0 => 1.04 * (1.0 + (0.04 * (1.0 - match_result.first_rapid_win_probability() / 100.0))),
+                    1 => 1.02 * (1.0 + (0.02 * (1.0 - match_result.second_blitz_win_probability() / 100.0))),
+                    2 => 1.08 * (1.0 + (0.08 * (1.0 - match_result.third_blitz_win_probability() / 100.0))),
+                    3 => 1.08 * (1.0 + (0.08 * (1.0 - match_result.forth_blitz_win_probability() / 100.0))),
+                    _ => 1.0,
+                }
+            } else {
+                1.0
+            };
+            TiebreakerRelativity::new(
+                relativity.player1().clone(), 
+                relativity.player2().clone(), 
+                relativity.bullet_win_probability() * player1_penalty * player2_penalty
+            )
+        })
+        .collect();
+
+    let team1_tiebreaker_details = mapped_tiebreaker_win_probability.iter()
+        .fold(HashMap::<String, Vec<&TiebreakerRelativity>>::new(), |mut acc, relativity| {
+            let player1_name = relativity.player1().korean_name();
+            acc.entry(player1_name.to_string()).or_insert_with(Vec::new).push(relativity);
+            acc
+        })
+        .values()
+        .map(|relativities| {
+            relativities.iter().min_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap()).unwrap()
+        })
+        .max_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap())
+        .cloned();
+
+    let team2_tiebreaker_details = mapped_tiebreaker_win_probability.iter()
+        .fold(HashMap::<String, Vec<&TiebreakerRelativity>>::new(), |mut acc, relativity| {
+            let player2_name = relativity.player2().korean_name();
+            acc.entry(player2_name.to_string()).or_insert_with(Vec::new).push(relativity);
+            acc
+        })
+        .values()
+        .map(|relativities| {
+            relativities.iter().max_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap()).unwrap()
+        })
+        .min_by(|a, b| a.win_probability().partial_cmp(&b.win_probability()).unwrap())
+        .cloned();
+
+    let tiebreaker_win_probability = (team1_tiebreaker_details.map_or(0.0, |details| details.win_probability()) + team2_tiebreaker_details.map_or(0.0, |details| details.win_probability())) / 2.0;
+
+    let all_win_probability = win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
+
+    let three_win_one_lose_probability = win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
+        let lose_prob = 1.0 - (win_prob / 100.0);
+        win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_win_prob)| other_win_prob / 100.0).product::<f64>() * lose_prob
+    }).sum::<f64>();
+
+    let two_win_two_lose_probability = win_probabilities.iter().enumerate().combinations(2).map(|win_indices| {
+        let win_prob_product = win_indices.iter().map(|&(i, _)| win_probabilities[i] / 100.0).product::<f64>();
+        let lose_indices = (0..win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
+        let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (win_probabilities[i] / 100.0)).product::<f64>();
+        win_prob_product * lose_prob_product
+    }).sum::<f64>();
+
+    let one_win_three_lose_probability = win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
+        let win_prob = win_prob / 100.0;
+        win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_lose_prob)| 1.0 - (other_lose_prob / 100.0)).product::<f64>() * win_prob
+    }).sum::<f64>();
+
+    let all_lose_probability = win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
+
+    let tie_win_probability = two_win_two_lose_probability * (tiebreaker_win_probability / 100.0);
+
+    let total_win_probability = tie_win_probability + three_win_one_lose_probability + all_win_probability;
+
+    (
+        tie_win_probability + three_win_one_lose_probability + all_win_probability,
+        4.0 * all_win_probability + 3.0 * three_win_one_lose_probability + 2.0 * two_win_two_lose_probability + 1.0 * one_win_three_lose_probability,
+        1.0 * three_win_one_lose_probability + 2.0 * two_win_two_lose_probability + 3.0 * one_win_three_lose_probability + 4.0 * all_lose_probability
+    )
+}
+
+fn redistribute_scores(a: f64, b: f64, c: f64, d: f64) -> (f64, f64, f64, f64) {
+    let scores = vec![a, b, c, d];
+    let total_score: f64 = scores.iter().sum();
+
+    let adjusted_scores: Vec<f64> = scores.iter().map(|&score| if score < 0.0 { 0.0 } else { score }).collect();
+    let new_total_score: f64 = adjusted_scores.iter().sum();
+    let redistributed_scores: Vec<f64> = adjusted_scores.iter().map(|&score| if score > 0.0 { score / new_total_score * total_score } else { 0.0 }).collect();
+
+    (redistributed_scores[0], redistributed_scores[1], redistributed_scores[2], redistributed_scores[3])
 }

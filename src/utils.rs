@@ -47,13 +47,10 @@ fn standard_error(base_probability: f64, total_games: f64) -> f64 {
 }
 
 fn interpolate(relative_probability: f64, standard_error: f64, base_probability: f64) -> f64 {
-    // weight가 0보다 작으면 left를 반환
     if standard_error <= 0.0 {
         return relative_probability;
-    // weight가 1보다 크면 right를 반환
     } else if standard_error >= 1.0 {
         return base_probability;
-    // weight가 0에서 1 사이에 있을 때는 left와 right 사이를 선형 보간하여 반환
     } else {
         return relative_probability * (1.0 - standard_error) + base_probability * standard_error;
     }
@@ -636,6 +633,10 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             break 'outer;
         }
         let matches = c.find_all(Locator::Css("div.live_detail")).await.expect("div.live_detail 요소를 찾는 중 오류가 발생했습니다.");
+        let mut first_rapid_now_sn = 0.0;
+        let mut second_blitz_now_sn = 0.0;
+        let mut third_blitz_now_sn = 0.0;
+        let mut forth_blitz_now_sn = 0.0;
         for match_element in &matches {
             let text = match match_element.text().await {
                 Ok(t) => t,
@@ -707,12 +708,16 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                         50.0
                     };
                     let current_elo_win_probability = if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
+                        first_rapid_now_sn = now_sn;
                         match_result.first_rapid_win_probability()
                     } else if text.contains(match_result.second_blitz().player1().chinese_name()) && text.contains(match_result.second_blitz().player2().chinese_name()) {
+                        second_blitz_now_sn = now_sn;
                         match_result.second_blitz_win_probability()
                     } else if text.contains(match_result.third_blitz().player1().chinese_name()) && text.contains(match_result.third_blitz().player2().chinese_name()) {
+                        third_blitz_now_sn = now_sn;
                         match_result.third_blitz_win_probability()
                     } else if text.contains(match_result.forth_blitz().player1().chinese_name()) && text.contains(match_result.forth_blitz().player2().chinese_name()) {
+                        forth_blitz_now_sn = now_sn;
                         match_result.forth_blitz_win_probability()
                     } else {
                         50.0
@@ -744,12 +749,16 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                     };
                 }
                 if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
+                    first_rapid_now_sn = 200.0;
                     live_match_result.set_first_rapid_win_probability(live_win_probability);
                 } else if text.contains(match_result.second_blitz().player1().chinese_name()) && text.contains(match_result.second_blitz().player2().chinese_name()) {
+                    second_blitz_now_sn = 200.0;
                     live_match_result.set_second_blitz_win_probability(live_win_probability);
                 } else if text.contains(match_result.third_blitz().player1().chinese_name()) && text.contains(match_result.third_blitz().player2().chinese_name()) {
+                    third_blitz_now_sn = 200.0;
                     live_match_result.set_third_blitz_win_probability(live_win_probability);
                 } else if text.contains(match_result.forth_blitz().player1().chinese_name()) && text.contains(match_result.forth_blitz().player2().chinese_name()) {
+                    forth_blitz_now_sn = 200.0;
                     live_match_result.set_forth_blitz_win_probability(live_win_probability);
                 }
             }
@@ -1094,21 +1103,21 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                 );
                 (
                     first_rapid_win_prob - win_prob,
-                    team1_first_rapid_score,
+                    interpolate(0.0, first_rapid_now_sn / 200.0, team1_first_rapid_score),
                     win_prob - first_rapid_win_prob,
-                    team2_first_rapid_score,
+                    interpolate(0.0, first_rapid_now_sn / 200.0, team2_first_rapid_score),
                     second_blitz_win_prob - win_prob,
-                    team1_second_blitz_score,
+                    interpolate(0.0, second_blitz_now_sn / 200.0, team1_second_blitz_score),
                     win_prob - second_blitz_win_prob,
-                    team2_second_blitz_score,
+                    interpolate(0.0, second_blitz_now_sn / 200.0, team2_second_blitz_score),
                     third_blitz_win_prob - win_prob,
-                    team1_third_blitz_score,
+                    interpolate(0.0, third_blitz_now_sn / 200.0, team1_third_blitz_score),
                     win_prob - third_blitz_win_prob,
-                    team2_third_blitz_score,
+                    interpolate(0.0, third_blitz_now_sn / 200.0, team2_third_blitz_score),
                     forth_blitz_win_prob - win_prob,
-                    team1_forth_blitz_score,
+                    interpolate(0.0, forth_blitz_now_sn / 200.0, team1_forth_blitz_score),
                     win_prob - forth_blitz_win_prob,
-                    team2_forth_blitz_score
+                    interpolate(0.0, forth_blitz_now_sn / 200.0, team2_forth_blitz_score)
                 )
             })();
 
@@ -1154,14 +1163,14 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             \n현재 스코어: {:.2}-{:.2}\n\
             ========================",
             live_match_result.first_rapid().player1().korean_name(),
-            if wpa_result.first_rapid_player1_wpa() * 100.0 > 0.0 {
+            if wpa_result.first_rapid_player1_wpa() * 100.0 >= 0.0 {
                 format!("+{:.2}", wpa_result.first_rapid_player1_wpa() * 100.0)
             } else {
                 format!("{:.2}", wpa_result.first_rapid_player1_wpa() * 100.0)
             },
             wpa_result.first_rapid_player1_score(),
             live_match_result.first_rapid().player2().korean_name(),
-            if wpa_result.first_rapid_player2_wpa() * 100.0 > 0.0 {
+            if wpa_result.first_rapid_player2_wpa() * 100.0 >= 0.0 {
                 format!("+{:.2}", wpa_result.first_rapid_player2_wpa() * 100.0)
             } else {
                 format!("{:.2}", wpa_result.first_rapid_player2_wpa() * 100.0)
@@ -1172,14 +1181,14 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             live_match_result.first_rapid().player2_wins(),
             live_match_result.first_rapid_win_probability(),
             live_match_result.second_blitz().player1().korean_name(),
-            if wpa_result.second_blitz_player1_wpa() * 100.0 > 0.0 {
+            if wpa_result.second_blitz_player1_wpa() * 100.0 >= 0.0 {
                 format!("+{:.2}", wpa_result.second_blitz_player1_wpa() * 100.0)
             } else {
                 format!("{:.2}", wpa_result.second_blitz_player1_wpa() * 100.0)
             },
             wpa_result.second_blitz_player1_score(),
             live_match_result.second_blitz().player2().korean_name(),
-            if wpa_result.second_blitz_player2_wpa() * 100.0 > 0.0 {
+            if wpa_result.second_blitz_player2_wpa() * 100.0 >= 0.0 {
                 format!("+{:.2}", wpa_result.second_blitz_player2_wpa() * 100.0)
             } else {
                 format!("{:.2}", wpa_result.second_blitz_player2_wpa() * 100.0)
@@ -1190,14 +1199,14 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             live_match_result.second_blitz().player2_wins(),
             live_match_result.second_blitz_win_probability(),
             live_match_result.third_blitz().player1().korean_name(),
-            if wpa_result.third_blitz_player1_wpa() * 100.0 > 0.0 {
+            if wpa_result.third_blitz_player1_wpa() * 100.0 >= 0.0 {
                 format!("+{:.2}", wpa_result.third_blitz_player1_wpa() * 100.0)
             } else {
                 format!("{:.2}", wpa_result.third_blitz_player1_wpa() * 100.0)
             },
             wpa_result.third_blitz_player1_score(),
             live_match_result.third_blitz().player2().korean_name(),
-            if wpa_result.third_blitz_player2_wpa() * 100.0 > 0.0 {
+            if wpa_result.third_blitz_player2_wpa() * 100.0 >= 0.0 {
                 format!("+{:.2}", wpa_result.third_blitz_player2_wpa() * 100.0)
             } else {
                 format!("{:.2}", wpa_result.third_blitz_player2_wpa() * 100.0)
@@ -1208,14 +1217,14 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             live_match_result.third_blitz().player2_wins(),
             live_match_result.third_blitz_win_probability(),
             live_match_result.forth_blitz().player1().korean_name(),
-            if wpa_result.forth_blitz_player1_wpa() * 100.0 > 0.0 {
+            if wpa_result.forth_blitz_player1_wpa() * 100.0 >= 0.0 {
                 format!("+{:.2}", wpa_result.forth_blitz_player1_wpa() * 100.0)
             } else {
                 format!("{:.2}", wpa_result.forth_blitz_player1_wpa() * 100.0)
             },
             wpa_result.forth_blitz_player1_score(),
             live_match_result.forth_blitz().player2().korean_name(),
-            if wpa_result.forth_blitz_player2_wpa() * 100.0 > 0.0 {
+            if wpa_result.forth_blitz_player2_wpa() * 100.0 >= 0.0 {
                 format!("+{:.2}", wpa_result.forth_blitz_player2_wpa() * 100.0)
             } else {
                 format!("{:.2}", wpa_result.forth_blitz_player2_wpa() * 100.0)

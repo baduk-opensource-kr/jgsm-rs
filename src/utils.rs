@@ -646,14 +646,13 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             let livedtl_el = match_element.find(Locator::Css("span.livedtl_time")).await.expect("span.livedtl_time 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
 
             let now = chrono::Local::now();
-            let livedtl_date = chrono::NaiveDate::parse_from_str(&format!("{} {}", now.format("%Y"), livedtl_el.split(' ').next().unwrap()), "%Y %m-%d").expect("날짜를 파싱하는 데 실패했습니다.");
             let livedtl_time = livedtl_el.split(' ').nth(1).unwrap();
             let livedtl_hour = livedtl_time.split(':').next().unwrap().parse::<u32>().expect("시간을 파싱하는 데 실패했습니다.");
             let livedtl_minute = livedtl_time.split(':').nth(1).unwrap().parse::<u32>().expect("분을 파싱하는 데 실패했습니다.");
             let today_20_clock = now.with_hour(20).unwrap().with_minute(0).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
             let livedtl_datetime = now.with_hour(livedtl_hour).unwrap().with_minute(livedtl_minute).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
 
-            if text.contains("KB") || text.contains("韩国围甲") && livedtl_date == now.date_naive() && livedtl_datetime < today_20_clock {
+            if text.contains("KB") || text.contains("韩国围甲") && livedtl_datetime < today_20_clock {
                 let mut live_win_probability = 50.0;
                 let (name1, elo1, elo2) = if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
                     (
@@ -832,14 +831,13 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             let livedtl_el = match_element.find(Locator::Css("span.livedtl_time")).await.expect("span.livedtl_time 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
 
             let now = chrono::Local::now();
-            let livedtl_date = chrono::NaiveDate::parse_from_str(&format!("{} {}", now.format("%Y"), livedtl_el.split(' ').next().unwrap()), "%Y %m-%d").expect("날짜를 파싱하는 데 실패했습니다.");
             let livedtl_time = livedtl_el.split(' ').nth(1).unwrap();
             let livedtl_hour = livedtl_time.split(':').next().unwrap().parse::<u32>().expect("시간을 파싱하는 데 실패했습니다.");
             let livedtl_minute = livedtl_time.split(':').nth(1).unwrap().parse::<u32>().expect("분을 파싱하는 데 실패했습니다.");
             let today_20_clock = now.with_hour(20).unwrap().with_minute(0).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
             let livedtl_datetime = now.with_hour(livedtl_hour).unwrap().with_minute(livedtl_minute).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
 
-            if text.contains("KB") || text.contains("韩国围甲") && livedtl_date == now.date_naive() && livedtl_datetime < today_20_clock {
+            if text.contains("KB") || text.contains("韩国围甲") && livedtl_datetime < today_20_clock {
                 let b_player = match_element.find(Locator::Css("div.livedtl_first")).await.expect("div.livedtl_first 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
                 let w_player = match_element.find(Locator::Css("div.livedtl_third")).await.expect("div.livedtl_third 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
 
@@ -1005,16 +1003,24 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             .map(|detail| detail.player2().korean_name().to_string())
             .collect();
         let tiebreaker_details = if !tiebreaker_name1.is_empty() {
-            format!("5국 초속기(bullet): {} vs {} (승리확률: {:.2}%)",
+            format!("
+                5국 초속기(bullet):  {} vs {}                           \
+                \n   예상승리확률: {:6.2}%  : {:6.2}%                   \
+            ",
                 tiebreaker_name1,
                 tiebreaker_name2,
-                tiebreaker_live_win_probability
+                tiebreaker_live_win_probability,
+                100.0 - tiebreaker_live_win_probability
             )
         } else if live_match_result.two_two_probability() > 0.0  {
-            format!("5국 초속기(bullet): ({}) vs ({}) (승리확률: {:.2}%)",
+            format!("
+                5국 초속기(bullet): ({}) vs ({})                           \
+                \n   예상승리확률: {:6.2}%  : {:6.2}%                       \
+            ",
                 player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
                 player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
-                live_match_result.tiebreaker_win_probability()
+                live_match_result.tiebreaker_win_probability(),
+                100.0 - live_match_result.tiebreaker_win_probability()
             )
         } else {
             String::new()
@@ -1145,95 +1151,113 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             )
         })();
 
-        let output = format!(
-            "========================\n\
-            1국 장고(rapid): {}(WPA: {}%p)(득점: {:.2}) vs {}(WPA: {}%p)(득점: {:.2}) ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-            2국 속기(blitz): {}(WPA: {}%p)(득점: {:.2}) vs {}(WPA: {}%p)(득점: {:.2}) ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-            3국 속기(blitz): {}(WPA: {}%p)(득점: {:.2}) vs {}(WPA: {}%p)(득점: {:.2}) ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-            4국 속기(blitz): {}(WPA: {}%p)(득점: {:.2}) vs {}(WPA: {}%p)(득점: {:.2}) ({}~ 상대전적: {}-{}) (승리확률: {:.2}%)\n\
-            {}
-            \n4-0: {:.2}%\n\
-            3-1: {:.2}%\n\
-            3-2: {:.2}%\n\
-            2-2: {:.2}%\n\
-            2-3: {:.2}%\n\
-            1-3: {:.2}%\n\
-            0-4: {:.2}%\n\
-            \n총 승리확률: {:.2}%\n\
-            \n현재 스코어: {:.2}-{:.2}\n\
-            ========================",
+        let output = format!("\n\
+            1국 장고(rapid):  {} vs {} ({}~ 상대전적: {}-{})\
+            \n   예상승리확률: {:6.2}%  : {:6.2}%          \
+            \n           득점:   {:4.2}   :   {:4.2}     \
+            \n            WPA: {}%p : {}%p           \n                              \n\
+            2국 속기(blitz):  {} vs {} ({}~ 상대전적: {}-{})\
+            \n   예상승리확률: {:6.2}%  : {:6.2}%          \
+            \n           득점:   {:4.2}   :   {:4.2}     \
+            \n            WPA: {}%p : {}%p           \n                              \n\
+            3국 속기(blitz):  {} vs {} ({}~ 상대전적: {}-{})\
+            \n   예상승리확률: {:6.2}%  : {:6.2}%          \
+            \n           득점:   {:4.2}   :   {:4.2}     \
+            \n            WPA: {}%p : {}%p           \n                              \n\
+            4국 속기(blitz):  {} vs {} ({}~ 상대전적: {}-{})\
+            \n   예상승리확률: {:6.2}%  : {:6.2}%          \
+            \n           득점:   {:4.2}   :   {:4.2}     \
+            \n            WPA: {}%p : {}%p           \n                              \n\
+            {}\
+            \n4-0: {:6.2}%                                   \n\
+            3-1: {:6.2}%                                   \n\
+            3-2: {:6.2}%                                   \n\
+            2-2: {:6.2}%                                   \n\
+            2-3: {:6.2}%                                   \n\
+            1-3: {:6.2}%                                   \n\
+            0-4: {:6.2}%                                   \n                                             \
+            \n총 승리확률: {:6.2}%                              \n                                             \
+            \n현재 스코어: {:.2}-{:.2}                              \
+            \n                                             \
+            \n                                             \
+            \n                                             \
+            ",
             live_match_result.first_rapid().player1().korean_name(),
-            if wpa_result.first_rapid_player1_wpa() * 100.0 >= 0.0 {
-                format!("+{:.2}", wpa_result.first_rapid_player1_wpa() * 100.0)
-            } else {
-                format!("{:.2}", wpa_result.first_rapid_player1_wpa() * 100.0)
-            },
-            wpa_result.first_rapid_player1_score(),
             live_match_result.first_rapid().player2().korean_name(),
-            if wpa_result.first_rapid_player2_wpa() * 100.0 >= 0.0 {
-                format!("+{:.2}", wpa_result.first_rapid_player2_wpa() * 100.0)
-            } else {
-                format!("{:.2}", wpa_result.first_rapid_player2_wpa() * 100.0)
-            },
-            wpa_result.first_rapid_player2_score(),
             chrono::Utc::now().year() - 3,
             live_match_result.first_rapid().player1_wins(),
             live_match_result.first_rapid().player2_wins(),
             live_match_result.first_rapid_win_probability(),
+            100.0 - live_match_result.first_rapid_win_probability(),
+            wpa_result.first_rapid_player1_score(),
+            wpa_result.first_rapid_player2_score(),
+            if wpa_result.first_rapid_player1_wpa() * 100.0 >= 0.0 {
+                format!("+{:5.2}", wpa_result.first_rapid_player1_wpa() * 100.0)
+            } else {
+                format!("-{:5.2}", wpa_result.first_rapid_player1_wpa().abs() * 100.0)
+            },
+            if wpa_result.first_rapid_player2_wpa() * 100.0 >= 0.0 {
+                format!("+{:5.2}", wpa_result.first_rapid_player2_wpa() * 100.0)
+            } else {
+                format!("-{:5.2}", wpa_result.first_rapid_player2_wpa().abs() * 100.0)
+            },
             live_match_result.second_blitz().player1().korean_name(),
-            if wpa_result.second_blitz_player1_wpa() * 100.0 >= 0.0 {
-                format!("+{:.2}", wpa_result.second_blitz_player1_wpa() * 100.0)
-            } else {
-                format!("{:.2}", wpa_result.second_blitz_player1_wpa() * 100.0)
-            },
-            wpa_result.second_blitz_player1_score(),
             live_match_result.second_blitz().player2().korean_name(),
-            if wpa_result.second_blitz_player2_wpa() * 100.0 >= 0.0 {
-                format!("+{:.2}", wpa_result.second_blitz_player2_wpa() * 100.0)
-            } else {
-                format!("{:.2}", wpa_result.second_blitz_player2_wpa() * 100.0)
-            },
-            wpa_result.second_blitz_player2_score(),
             chrono::Utc::now().year() - 3,
             live_match_result.second_blitz().player1_wins(),
             live_match_result.second_blitz().player2_wins(),
             live_match_result.second_blitz_win_probability(),
+            100.0 - live_match_result.second_blitz_win_probability(),
+            wpa_result.second_blitz_player1_score(),
+            wpa_result.second_blitz_player2_score(),
+            if wpa_result.second_blitz_player1_wpa() * 100.0 >= 0.0 {
+                format!("+{:5.2}", wpa_result.second_blitz_player1_wpa() * 100.0)
+            } else {
+                format!("-{:5.2}", wpa_result.second_blitz_player1_wpa().abs() * 100.0)
+            },
+            if wpa_result.second_blitz_player2_wpa() * 100.0 >= 0.0 {
+                format!("+{:5.2}", wpa_result.second_blitz_player2_wpa() * 100.0)
+            } else {
+                format!("-{:5.2}", wpa_result.second_blitz_player2_wpa().abs() * 100.0)
+            },
             live_match_result.third_blitz().player1().korean_name(),
-            if wpa_result.third_blitz_player1_wpa() * 100.0 >= 0.0 {
-                format!("+{:.2}", wpa_result.third_blitz_player1_wpa() * 100.0)
-            } else {
-                format!("{:.2}", wpa_result.third_blitz_player1_wpa() * 100.0)
-            },
-            wpa_result.third_blitz_player1_score(),
             live_match_result.third_blitz().player2().korean_name(),
-            if wpa_result.third_blitz_player2_wpa() * 100.0 >= 0.0 {
-                format!("+{:.2}", wpa_result.third_blitz_player2_wpa() * 100.0)
-            } else {
-                format!("{:.2}", wpa_result.third_blitz_player2_wpa() * 100.0)
-            },
-            wpa_result.third_blitz_player2_score(),
             chrono::Utc::now().year() - 3,
             live_match_result.third_blitz().player1_wins(),
             live_match_result.third_blitz().player2_wins(),
             live_match_result.third_blitz_win_probability(),
+            100.0 - live_match_result.third_blitz_win_probability(),
+            wpa_result.third_blitz_player1_score(),
+            wpa_result.third_blitz_player2_score(),
+            if wpa_result.third_blitz_player1_wpa() * 100.0 >= 0.0 {
+                format!("+{:5.2}", wpa_result.third_blitz_player1_wpa() * 100.0)
+            } else {
+                format!("-{:5.2}", wpa_result.third_blitz_player1_wpa().abs() * 100.0)
+            },
+            if wpa_result.third_blitz_player2_wpa() * 100.0 >= 0.0 {
+                format!("+{:5.2}", wpa_result.third_blitz_player2_wpa() * 100.0)
+            } else {
+                format!("-{:5.2}", wpa_result.third_blitz_player2_wpa().abs() * 100.0)
+            },
             live_match_result.forth_blitz().player1().korean_name(),
-            if wpa_result.forth_blitz_player1_wpa() * 100.0 >= 0.0 {
-                format!("+{:.2}", wpa_result.forth_blitz_player1_wpa() * 100.0)
-            } else {
-                format!("{:.2}", wpa_result.forth_blitz_player1_wpa() * 100.0)
-            },
-            wpa_result.forth_blitz_player1_score(),
             live_match_result.forth_blitz().player2().korean_name(),
-            if wpa_result.forth_blitz_player2_wpa() * 100.0 >= 0.0 {
-                format!("+{:.2}", wpa_result.forth_blitz_player2_wpa() * 100.0)
-            } else {
-                format!("{:.2}", wpa_result.forth_blitz_player2_wpa() * 100.0)
-            },
-            wpa_result.forth_blitz_player2_score(),
             chrono::Utc::now().year() - 3,
             live_match_result.forth_blitz().player1_wins(),
             live_match_result.forth_blitz().player2_wins(),
             live_match_result.forth_blitz_win_probability(),
+            100.0 - live_match_result.forth_blitz_win_probability(),
+            wpa_result.forth_blitz_player1_score(),
+            wpa_result.forth_blitz_player2_score(),
+            if wpa_result.forth_blitz_player1_wpa() * 100.0 >= 0.0 {
+                format!("+{:5.2}", wpa_result.forth_blitz_player1_wpa() * 100.0)
+            } else {
+                format!("-{:5.2}", wpa_result.forth_blitz_player1_wpa().abs() * 100.0)
+            },
+            if wpa_result.forth_blitz_player2_wpa() * 100.0 >= 0.0 {
+                format!("+{:5.2}", wpa_result.forth_blitz_player2_wpa() * 100.0)
+            } else {
+                format!("-{:5.2}", wpa_result.forth_blitz_player2_wpa().abs() * 100.0)
+            },
             tiebreaker_details,
             live_match_result.four_zero_probability(),
             live_match_result.three_one_probability(),

@@ -159,8 +159,8 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                         player.set_elo_rating(rating);
                     }
                 }
-                player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()));
-                player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) * 2.0);
+                player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
+                player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
             } else if let Some(&rating) = player_ratings_on_goratings.get(player.english_name()) {
                 match get_recent_record(player.korean_name(), rating + goratings_to_baeteil, &player_ratings_on_baeteil) {
                     Ok(current_rating) => {
@@ -170,8 +170,8 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                         player.set_elo_rating(rating + goratings_to_baeteil);
                     }
                 }
-                player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()));
-                player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) * 2.0);
+                player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
+                player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
             }
         }
     }
@@ -1003,9 +1003,8 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             .map(|detail| detail.player2().korean_name().to_string())
             .collect();
         let tiebreaker_details = if !tiebreaker_name1.is_empty() {
-            format!("
-                5국 초속기(bullet):  {} vs {}                           \
-                \n   예상승리확률: {:6.2}%  : {:6.2}%                   \
+            format!("5국 초속기(bullet):  {} vs {}\
+                \n      예상승리확률: {:6.2}%  : {:6.2}%\n\
             ",
                 tiebreaker_name1,
                 tiebreaker_name2,
@@ -1013,9 +1012,8 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                 100.0 - tiebreaker_live_win_probability
             )
         } else if live_match_result.two_two_probability() > 0.0  {
-            format!("
-                5국 초속기(bullet): ({}) vs ({})                           \
-                \n   예상승리확률: {:6.2}%  : {:6.2}%                       \
+            format!("5국 초속기(bullet): ({}) vs ({})\
+                \n      예상승리확률: {:6.2}%  : {:6.2}%\n\
             ",
                 player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),
                 player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "),

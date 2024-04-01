@@ -1404,8 +1404,8 @@ pub fn get_recent_record(gisa1: &str, mut gisa1_rating: f64, rating_list: &HashM
         let gisa2 = if !winner_text.contains(gisa1) { &players[0] } else { &players[1] };
         if let Some(gisa2_rating) = rating_list.get(gisa2) {
             let is_win = if winner_text.contains(gisa1) { 1.0 } else { 0.0 };
-            let win_probability = calculate_win_probability(gisa1_rating, *gisa2_rating);
-            gisa1_rating += is_win - win_probability;
+            let win_probability = calculate_win_probability(gisa1_rating, baeteil_to_goratings(*gisa2_rating));
+            gisa1_rating += 1.5 * (is_win - win_probability);
         }
     }
 

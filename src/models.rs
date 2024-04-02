@@ -178,11 +178,18 @@ pub struct PlayerRelativity {
     player2: Player,
     player1_wins: u32,
     player2_wins: u32,
-    elo_win_probability: f64,
-    condition_win_probability: f64,
-    rapid_win_probability: f64,
-    blitz_win_probability: f64,
-    bullet_win_probability: f64,
+
+    // elo_win_probability: f64,
+    // condition_win_probability: f64,
+    // rapid_win_probability: f64,
+    // blitz_win_probability: f64,
+    // bullet_win_probability: f64,
+
+    first_rapid_win_probability: f64,
+    second_blitz_win_probability: f64,
+    third_blitz_win_probability: f64,
+    forth_blitz_win_probability: f64,
+    fifth_bullet_win_probability: f64,
 }
 
 impl PlayerRelativity {
@@ -191,22 +198,32 @@ impl PlayerRelativity {
         player2: Player,
         player1_wins: u32,
         player2_wins: u32,
-        elo_win_probability: f64,
-        condition_win_probability: f64,
-        rapid_win_probability: f64,
-        blitz_win_probability: f64,
-        bullet_win_probability: f64,
+        // elo_win_probability: f64,
+        // condition_win_probability: f64,
+        // rapid_win_probability: f64,
+        // blitz_win_probability: f64,
+        // bullet_win_probability: f64,
+        first_rapid_win_probability: f64,
+        second_blitz_win_probability: f64,
+        third_blitz_win_probability: f64,
+        forth_blitz_win_probability: f64,
+        fifth_bullet_win_probability: f64,
     ) -> Self {
         Self {
             player1,
             player2,
             player1_wins,
             player2_wins,
-            elo_win_probability,
-            condition_win_probability,
-            rapid_win_probability,
-            blitz_win_probability,
-            bullet_win_probability,
+            // elo_win_probability,
+            // condition_win_probability,
+            // rapid_win_probability,
+            // blitz_win_probability,
+            // bullet_win_probability,
+            first_rapid_win_probability,
+            second_blitz_win_probability,
+            third_blitz_win_probability,
+            forth_blitz_win_probability,
+            fifth_bullet_win_probability,
         }
     }
 
@@ -226,24 +243,44 @@ impl PlayerRelativity {
         self.player2_wins
     }
 
-    pub fn elo_win_probability(&self) -> f64 {
-        self.elo_win_probability
+    // pub fn elo_win_probability(&self) -> f64 {
+    //     self.elo_win_probability
+    // }
+
+    // pub fn condition_win_probability(&self) -> f64 {
+    //     self.condition_win_probability
+    // }
+
+    // pub fn rapid_win_probability(&self) -> f64 {
+    //     self.rapid_win_probability
+    // }
+
+    // pub fn blitz_win_probability(&self) -> f64 {
+    //     self.blitz_win_probability
+    // }
+
+    // pub fn bullet_win_probability(&self) -> f64 {
+    //     self.bullet_win_probability
+    // }
+
+    pub fn first_rapid_win_probability(&self) -> f64 {
+        self.first_rapid_win_probability
     }
 
-    pub fn condition_win_probability(&self) -> f64 {
-        self.condition_win_probability
+    pub fn second_blitz_win_probability(&self) -> f64 {
+        self.second_blitz_win_probability
     }
 
-    pub fn rapid_win_probability(&self) -> f64 {
-        self.rapid_win_probability
+    pub fn third_blitz_win_probability(&self) -> f64 {
+        self.third_blitz_win_probability
     }
 
-    pub fn blitz_win_probability(&self) -> f64 {
-        self.blitz_win_probability
+    pub fn forth_blitz_win_probability(&self) -> f64 {
+        self.forth_blitz_win_probability
     }
 
-    pub fn bullet_win_probability(&self) -> f64 {
-        self.bullet_win_probability
+    pub fn fifth_bullet_win_probability(&self) -> f64 {
+        self.fifth_bullet_win_probability
     }
 }
 

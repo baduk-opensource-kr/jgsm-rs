@@ -302,8 +302,41 @@ pub fn execute_kbleague() {
         }
     }
 
+    let mut first_rapid_black: bool = false;
+    let mut first_rapid_none_color: bool = false;
+
+    loop {
+        println!("\n{}의 1국 장고(rapid)가 흑번인지 백번인지 선택해주세요:", selected_teams[0].team_name());
+        println!("1. 흑번");
+        println!("2. 백번");
+        println!("3. 알 수 없음");
+
+        let mut color_option = String::new();
+        io::stdin().read_line(&mut color_option).expect("입력을 읽는 데 실패했습니다.");
+        let color_option = color_option.trim();
+
+        match color_option {
+            "1" => {
+                first_rapid_none_color = false;
+                first_rapid_black = true;
+                break;
+            },
+            "2" => {
+                first_rapid_none_color = false;
+                first_rapid_black = false;
+                break;
+            },
+            "3" => {
+                first_rapid_none_color = true;
+                break;
+            },
+            "exit" => break,
+            _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
+        }
+    }
+
     println!("\n상대전적을 업데이트 중...");
-    match utils::generate_player_relativities(&selected_teams) {
+    match utils::generate_player_relativities(&selected_teams, first_rapid_black, first_rapid_none_color) {
         Ok(player_relativities) => {
             println!("\n라인업 메트릭스 생성 중...");
             let mut match_results_matrix: Vec<Vec<MatchResult>> = Vec::new();
@@ -1141,46 +1174,9 @@ pub fn execute_kbleague() {
                                 _ => false,
                             }
                         });
-                        let best_match_result2 = match_results_matrix.iter().flatten().find(|&match_result| {
-                            match (team1_best_lineup, team2_best_lineup) {
-                                (Some(team1_lineup), Some(team2_lineup)) => {
-                                    match_result.first_rapid().player1().korean_name() == team1_lineup.first_rapid().player1().korean_name() &&
-                                    match_result.second_blitz().player1().korean_name() == team1_lineup.second_blitz().player1().korean_name() &&
-                                    match_result.third_blitz().player1().korean_name() == team1_lineup.third_blitz().player1().korean_name() &&
-                                    match_result.forth_blitz().player1().korean_name() == team1_lineup.forth_blitz().player1().korean_name() &&
-                                    match_result.first_rapid().player2().korean_name() == team2_lineup.first_rapid().player2().korean_name() &&
-                                    match_result.second_blitz().player2().korean_name() == team2_lineup.second_blitz().player2().korean_name() &&
-                                    match_result.third_blitz().player2().korean_name() == team2_lineup.forth_blitz().player2().korean_name() &&
-                                    match_result.forth_blitz().player2().korean_name() == team2_lineup.third_blitz().player2().korean_name()
-                                },
-                                _ => false,
-                            }
-                        });
 
                         println!("========================");
                         if let Some(best_result) = best_match_result1 {
-                            let player1_best_tiebreaker_names: HashSet<String> = best_result.tiebreaker_relativities().iter()
-                                .filter_map(|detail| detail.as_ref())
-                                .map(|detail| detail.player1().korean_name().to_string())
-                                .collect();
-                            let player2_best_tiebreaker_names: HashSet<String> = best_result.tiebreaker_relativities().iter()
-                                .filter_map(|detail| detail.as_ref())
-                                .map(|detail| detail.player2().korean_name().to_string())
-                                .collect();
-                            println!("1국 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.first_rapid().player1().korean_name(), best_result.first_rapid().player2().korean_name(), best_result.first_rapid().player1_wins(), best_result.first_rapid().player2_wins(), best_result.first_rapid_win_probability());
-                            println!("2국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.second_blitz().player1().korean_name(), best_result.second_blitz().player2().korean_name(), best_result.second_blitz().player1_wins(), best_result.second_blitz().player2_wins(), best_result.second_blitz_win_probability());
-                            println!("3국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.third_blitz().player1().korean_name(), best_result.third_blitz().player2().korean_name(), best_result.third_blitz().player1_wins(), best_result.third_blitz().player2_wins(), best_result.third_blitz_win_probability());
-                            println!("4국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", best_result.forth_blitz().player1().korean_name(), best_result.forth_blitz().player2().korean_name(), best_result.forth_blitz().player1_wins(), best_result.forth_blitz().player2_wins(), best_result.forth_blitz_win_probability());
-                            println!("\n4-0: {:.2}%", best_result.four_zero_probability());
-                            println!("3-1: {:.2}%", best_result.three_one_probability());
-                            println!("2-2: {:.2}% => ({}) vs ({}): {:.2}%", best_result.two_two_probability(), player1_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "), player2_best_tiebreaker_names.iter().cloned().collect::<Vec<_>>().join(", "), best_result.tiebreaker_win_probability());
-                            println!("1-3: {:.2}%", best_result.one_three_probability());
-                            println!("0-4: {:.2}%", best_result.zero_four_probability());
-                            println!("\n총 승리확률: {:.2}%", best_result.total_win_probability());
-                        } else {
-                            println!("적합한 매치 결과를 찾을 수 없습니다.");
-                        }
-                        if let Some(best_result) = best_match_result2 {
                             let player1_best_tiebreaker_names: HashSet<String> = best_result.tiebreaker_relativities().iter()
                                 .filter_map(|detail| detail.as_ref())
                                 .map(|detail| detail.player1().korean_name().to_string())
@@ -1300,16 +1296,16 @@ pub fn execute_kbleague() {
                                         1.0
                                     };
 
-                                    let modified_bullet_win_probability = relativity.bullet_win_probability() * player1_penalty * player2_penalty;
+                                    let modified_bullet_win_probability = relativity.fifth_bullet_win_probability() * player1_penalty * player2_penalty;
                                     PlayerRelativity::new(
                                         relativity.player1().clone(),
                                         relativity.player2().clone(),
                                         relativity.player1_wins(),
                                         relativity.player2_wins(),
-                                        relativity.elo_win_probability(),
-                                        relativity.condition_win_probability(),
-                                        relativity.rapid_win_probability(),
-                                        relativity.blitz_win_probability(),
+                                        relativity.first_rapid_win_probability(),
+                                        relativity.second_blitz_win_probability(),
+                                        relativity.third_blitz_win_probability(),
+                                        relativity.forth_blitz_win_probability(),
                                         modified_bullet_win_probability,
                                     )
                                 })
@@ -1395,7 +1391,7 @@ pub fn execute_kbleague_power_ranking() {
             }
 
             println!("상대전적을 업데이트 중...");
-            match utils::generate_player_relativities(&selected_teams) {
+            match utils::generate_player_relativities(&selected_teams, false, false) {
                 Ok(player_relativities) => {
                     println!("라인업 메트릭스 생성 중...");
                     let mut match_results_matrix: Vec<Vec<MatchResult>> = Vec::new();
@@ -1539,33 +1535,13 @@ pub fn execute_kbleague_power_ranking() {
                         }
                     });
 
-                    let best_match_result2 = match_results_matrix.iter().flatten().find(|&match_result| {
-                        match (team1_best_lineup, team2_best_lineup) {
-                            (Some(team1_lineup), Some(team2_lineup)) => {
-                                match_result.first_rapid().player1().korean_name() == team1_lineup.first_rapid().player1().korean_name() &&
-                                match_result.second_blitz().player1().korean_name() == team1_lineup.second_blitz().player1().korean_name() &&
-                                match_result.third_blitz().player1().korean_name() == team1_lineup.third_blitz().player1().korean_name() &&
-                                match_result.forth_blitz().player1().korean_name() == team1_lineup.forth_blitz().player1().korean_name() &&
-                                match_result.first_rapid().player2().korean_name() == team2_lineup.first_rapid().player2().korean_name() &&
-                                match_result.second_blitz().player2().korean_name() == team2_lineup.second_blitz().player2().korean_name() &&
-                                match_result.third_blitz().player2().korean_name() == team2_lineup.forth_blitz().player2().korean_name() &&
-                                match_result.forth_blitz().player2().korean_name() == team2_lineup.third_blitz().player2().korean_name()
-                            },
-                            _ => false,
-                        }
-                    });
-
                     if let Some(best_result1) = best_match_result1 {
-                        if let Some(best_result2) = best_match_result2 {
-                            println!("총 승리확률: {:.2}%", (best_result1.total_win_probability() + best_result2.total_win_probability()) / 2.0);
-                            row.push(TeamRelativity::new(
-                                selected_teams[0].clone(),
-                                selected_teams[1].clone(),
-                                (best_result1.total_win_probability() + best_result2.total_win_probability()) / 2.0
-                            ));
-                        } else {
-                            println!("적합한 매치 결과를 찾을 수 없습니다.");
-                        }
+                        println!("총 승리확률: {:.2}%", best_result1.total_win_probability());
+                        row.push(TeamRelativity::new(
+                            selected_teams[0].clone(),
+                            selected_teams[1].clone(),
+                            best_result1.total_win_probability()
+                        ));
                     } else {
                         println!("적합한 매치 결과를 찾을 수 없습니다.");
                     }

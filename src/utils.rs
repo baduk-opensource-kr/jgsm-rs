@@ -250,7 +250,7 @@ fn baeteil_to_goratings(x: f64) -> f64 {
     }
 }
 
-pub fn generate_player_relativities(selected_teams: &Vec<Team>) -> Result<Vec<PlayerRelativity>, String> {
+pub fn generate_player_relativities(selected_teams: &Vec<Team>, first_rapid_black: bool, first_rapid_none_color: bool) -> Result<Vec<PlayerRelativity>, String> {
     let mut all_relative_records: Vec<PlayerRelativity> = Vec::new();
 
     let team1 = &selected_teams[0];
@@ -261,22 +261,64 @@ pub fn generate_player_relativities(selected_teams: &Vec<Team>) -> Result<Vec<Pl
                                .map_err(|e| format!("상대전적을 가져오는 중 오류가 발생했습니다: {}", e))?;
             let player1_wins = *record.get(player1.korean_name()).unwrap_or(&0);
             let player2_wins = *record.get(player2.korean_name()).unwrap_or(&0);
-            let elo_win_probability = calculate_win_probability_with_relative_record(player1.elo_rating() as f64, player2.elo_rating() as f64, player1_wins as u32, player2_wins as u32);
-            let condition_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight()) as f64, (player2.elo_rating() + player2.condition_weight()) as f64, player1_wins, player2_wins);
-            let rapid_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.rapid_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight()) as f64, player1_wins, player2_wins);
-            let blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight()) as f64, player1_wins, player2_wins);
-            let bullet_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.bullet_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight()) as f64, player1_wins, player2_wins);
-            all_relative_records.push(PlayerRelativity::new(
-                player1.clone(),
-                player2.clone(),
-                player1_wins,
-                player2_wins,
-                elo_win_probability * 100.0,
-                condition_win_probability * 100.0,
-                rapid_win_probability * 100.0,
-                blitz_win_probability * 100.0,
-                bullet_win_probability * 100.0,
-            ));
+
+            if first_rapid_none_color {
+                if first_rapid_black {
+                    let first_rapid_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + player1.black_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + player2.white_weight()) as f64, player1_wins, player2_wins);
+                    let second_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight()) as f64, player1_wins, player2_wins);
+                    let third_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight()) as f64, player1_wins, player2_wins);
+                    let forth_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight()) as f64, player1_wins, player2_wins);
+                    let fifth_bullet_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + player1.black_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + player2.white_weight()) as f64, player1_wins, player2_wins);
+
+                    all_relative_records.push(PlayerRelativity::new(
+                        player1.clone(),
+                        player2.clone(),
+                        player1_wins,
+                        player2_wins,
+                        first_rapid_win_probability * 100.0,
+                        second_blitz_win_probability * 100.0,
+                        third_blitz_win_probability * 100.0,
+                        forth_blitz_win_probability * 100.0,
+                        fifth_bullet_win_probability * 100.0,
+                    ));
+                } else {
+                    let first_rapid_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + player1.white_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + player2.black_weight()) as f64, player1_wins, player2_wins);
+                    let second_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight()) as f64, player1_wins, player2_wins);
+                    let third_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight()) as f64, player1_wins, player2_wins);
+                    let forth_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight()) as f64, player1_wins, player2_wins);
+                    let fifth_bullet_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + player1.white_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + player2.black_weight()) as f64, player1_wins, player2_wins);
+
+                    all_relative_records.push(PlayerRelativity::new(
+                        player1.clone(),
+                        player2.clone(),
+                        player1_wins,
+                        player2_wins,
+                        first_rapid_win_probability * 100.0,
+                        second_blitz_win_probability * 100.0,
+                        third_blitz_win_probability * 100.0,
+                        forth_blitz_win_probability * 100.0,
+                        fifth_bullet_win_probability * 100.0,
+                    ));
+                }
+            } else {
+                let first_rapid_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.rapid_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight()) as f64, player1_wins, player2_wins);
+                let second_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight()) as f64, player1_wins, player2_wins);
+                let third_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight()) as f64, player1_wins, player2_wins);
+                let forth_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight()) as f64, player1_wins, player2_wins);
+                let fifth_bullet_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.bullet_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight()) as f64, player1_wins, player2_wins);
+
+                all_relative_records.push(PlayerRelativity::new(
+                    player1.clone(),
+                    player2.clone(),
+                    player1_wins,
+                    player2_wins,
+                    first_rapid_win_probability * 100.0,
+                    second_blitz_win_probability * 100.0,
+                    third_blitz_win_probability * 100.0,
+                    forth_blitz_win_probability * 100.0,
+                    fifth_bullet_win_probability * 100.0,
+                ));
+            }
         }
     }
 
@@ -294,10 +336,13 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
         if let Some(player2) = team2_players.get(i) {
             if let Some(relativity) = player_relativities.iter().find(|r| r.player1().korean_name() == player1.korean_name() && r.player2().korean_name() == player2.korean_name()) {
                 win_probabilities[i] = match i {
-                    0 => relativity.rapid_win_probability(),
-                    _ => relativity.blitz_win_probability(),
+                    0 => relativity.first_rapid_win_probability(),
+                    1 => relativity.second_blitz_win_probability(),
+                    2 => relativity.third_blitz_win_probability(),
+                    3 => relativity.forth_blitz_win_probability(),
+                    _ => relativity.fifth_bullet_win_probability(),
                 };
-                bullet_win_probabilities[i] = relativity.bullet_win_probability();
+                bullet_win_probabilities[i] = relativity.fifth_bullet_win_probability();
             }
         }
     }
@@ -308,10 +353,10 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
             let player2_position = team2_players.iter().position(|p| p.korean_name() == relativity.player2().korean_name());
             let player1_penalty = if let Some(pos) = player1_position {
                 match pos {
-                    0 => (1.0 / 1.04) * (1.0 / (1.0 + (0.04 * (1.0 - relativity.rapid_win_probability() / 100.0)))),
-                    1 => (1.0 / 1.02) * (1.0 / (1.0 + (0.02 * (1.0 - relativity.blitz_win_probability() / 100.0)))),
-                    2 => (1.0 / 1.08) * (1.0 / (1.0 + (0.08 * (1.0 - relativity.blitz_win_probability() / 100.0)))),
-                    3 => (1.0 / 1.08) * (1.0 / (1.0 + (0.08 * (1.0 - relativity.blitz_win_probability() / 100.0)))),
+                    0 => (1.0 / 1.04) * (1.0 / (1.0 + (0.04 * (1.0 - relativity.first_rapid_win_probability() / 100.0)))),
+                    1 => (1.0 / 1.02) * (1.0 / (1.0 + (0.02 * (1.0 - relativity.second_blitz_win_probability() / 100.0)))),
+                    2 => (1.0 / 1.08) * (1.0 / (1.0 + (0.08 * (1.0 - relativity.third_blitz_win_probability() / 100.0)))),
+                    3 => (1.0 / 1.08) * (1.0 / (1.0 + (0.08 * (1.0 - relativity.forth_blitz_win_probability() / 100.0)))),
                     _ => 1.0,
                 }
             } else {
@@ -319,10 +364,10 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
             };
             let player2_penalty = if let Some(pos) = player2_position {
                 match pos {
-                    0 => 1.04 * (1.0 + (0.04 * (1.0 - relativity.rapid_win_probability() / 100.0))),
-                    1 => 1.02 * (1.0 + (0.02 * (1.0 - relativity.blitz_win_probability() / 100.0))),
-                    2 => 1.08 * (1.0 + (0.08 * (1.0 - relativity.blitz_win_probability() / 100.0))),
-                    3 => 1.08 * (1.0 + (0.08 * (1.0 - relativity.blitz_win_probability() / 100.0))),
+                    0 => 1.04 * (1.0 + (0.04 * (1.0 - relativity.first_rapid_win_probability() / 100.0))),
+                    1 => 1.02 * (1.0 + (0.02 * (1.0 - relativity.second_blitz_win_probability() / 100.0))),
+                    2 => 1.08 * (1.0 + (0.08 * (1.0 - relativity.third_blitz_win_probability() / 100.0))),
+                    3 => 1.08 * (1.0 + (0.08 * (1.0 - relativity.forth_blitz_win_probability() / 100.0))),
                     _ => 1.0,
                 }
             } else {
@@ -331,7 +376,7 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
             TiebreakerRelativity::new(
                 relativity.player1().clone(), 
                 relativity.player2().clone(), 
-                relativity.bullet_win_probability() * player1_penalty * player2_penalty
+                relativity.fifth_bullet_win_probability() * player1_penalty * player2_penalty
             )
         })
         .collect();
@@ -411,11 +456,11 @@ pub fn calculate_match_result(team1_lineup: Lineup, team2_lineup: Lineup, player
 
 pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>, match_results_matrix: Vec<Vec<MatchResult>>) -> Result<(), Box<dyn std::error::Error>> {
     let workbook = Workbook::new("player_relativities.xlsx")?;
-    let mut worksheet_elo = workbook.add_worksheet(Some("개인-기본ELO 기반"))?;
-    let mut worksheet_condition = workbook.add_worksheet(Some("개인-컨디션 기반"))?;
-    let mut worksheet_rapid = workbook.add_worksheet(Some("개인-장고 기반"))?;
-    let mut worksheet_blitz = workbook.add_worksheet(Some("개인-속기 기반"))?;
-    let mut worksheet_bullet = workbook.add_worksheet(Some("개인-초속기 기반"))?;
+    let mut worksheet_first_rapid = workbook.add_worksheet(Some("1국 장고 기반"))?;
+    let mut worksheet_second_blitz = workbook.add_worksheet(Some("2국 속기 기반"))?;
+    let mut worksheet_third_blitz = workbook.add_worksheet(Some("3국 속기 기반"))?;
+    let mut worksheet_forth_blitz = workbook.add_worksheet(Some("4국 속기 기반"))?;
+    let mut worksheet_fifth_bullet = workbook.add_worksheet(Some("5국 초속기 기반"))?;
 
     let mut player1_set = HashSet::new();
     let mut player2_set = HashSet::new();
@@ -444,20 +489,20 @@ pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>
     let mut player2_index = HashMap::new();
 
     for (index, player) in player1s.iter().enumerate() {
-        worksheet_elo.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
-        worksheet_condition.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
-        worksheet_rapid.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
-        worksheet_blitz.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
-        worksheet_bullet.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
+        worksheet_first_rapid.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
+        worksheet_second_blitz.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
+        worksheet_third_blitz.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
+        worksheet_forth_blitz.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
+        worksheet_fifth_bullet.write_string((index + 1).try_into().unwrap(), 0, player, None)?;
         player1_index.insert(player.clone(), index + 1);
     }
 
     for (index, player) in player2s.iter().enumerate() {
-        worksheet_elo.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
-        worksheet_condition.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
-        worksheet_rapid.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
-        worksheet_blitz.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
-        worksheet_bullet.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
+        worksheet_first_rapid.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
+        worksheet_second_blitz.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
+        worksheet_third_blitz.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
+        worksheet_forth_blitz.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
+        worksheet_fifth_bullet.write_string(0, (index + 1).try_into().unwrap(), player, None)?;
         player2_index.insert(player.clone(), index + 1);
     }
 
@@ -465,17 +510,17 @@ pub fn create_excel_from_relativities(player_relativities: Vec<PlayerRelativity>
         let row = player1_index[relativity.player1().korean_name()];
         let col = player2_index[relativity.player2().korean_name()];
 
-        let elo_format = create_custom_format(relativity.elo_win_probability(), 15.0)?;
-        let condition_format = create_custom_format(relativity.condition_win_probability(), 15.0)?;
-        let rapid_format = create_custom_format(relativity.rapid_win_probability(), 15.0)?;
-        let blitz_format = create_custom_format(relativity.blitz_win_probability(), 15.0)?;
-        let bullet_format = create_custom_format(relativity.bullet_win_probability(), 15.0)?;
+        let first_rapid_format = create_custom_format(relativity.first_rapid_win_probability(), 15.0)?;
+        let second_blitz_format = create_custom_format(relativity.second_blitz_win_probability(), 15.0)?;
+        let third_blitz_format = create_custom_format(relativity.third_blitz_win_probability(), 15.0)?;
+        let forth_blitz_format = create_custom_format(relativity.forth_blitz_win_probability(), 15.0)?;
+        let fifth_bullet_format = create_custom_format(relativity.fifth_bullet_win_probability(), 15.0)?;
 
-        worksheet_elo.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.elo_win_probability() / 100.0, Some(&elo_format))?;
-        worksheet_condition.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.condition_win_probability() / 100.0, Some(&condition_format))?;
-        worksheet_rapid.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.rapid_win_probability() / 100.0, Some(&rapid_format))?;
-        worksheet_blitz.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.blitz_win_probability() / 100.0, Some(&blitz_format))?;
-        worksheet_bullet.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.bullet_win_probability() / 100.0, Some(&bullet_format))?;
+        worksheet_first_rapid.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.first_rapid_win_probability() / 100.0, Some(&first_rapid_format))?;
+        worksheet_second_blitz.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.second_blitz_win_probability() / 100.0, Some(&second_blitz_format))?;
+        worksheet_third_blitz.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.third_blitz_win_probability() / 100.0, Some(&third_blitz_format))?;
+        worksheet_forth_blitz.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.forth_blitz_win_probability() / 100.0, Some(&forth_blitz_format))?;
+        worksheet_fifth_bullet.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.fifth_bullet_win_probability() / 100.0, Some(&fifth_bullet_format))?;
     }
 
     let mut worksheet_total_win = workbook.add_worksheet(Some("팀-최종승리"))?;
@@ -573,9 +618,9 @@ pub fn create_excel_from_tiebreaker_relativities(outcome_map: HashMap<&str, Vec<
             let row = player1_index[relativity.player1().korean_name()];
             let col = player2_index[relativity.player2().korean_name()];
 
-            let format = create_custom_format(relativity.bullet_win_probability(), 15.0)?;
+            let format = create_custom_format(relativity.fifth_bullet_win_probability(), 15.0)?;
 
-            worksheet.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.bullet_win_probability() / 100.0, Some(&format))?;
+            worksheet.write_number(row.try_into().unwrap(), col.try_into().unwrap(), relativity.fifth_bullet_win_probability() / 100.0, Some(&format))?;
         }
     }
 
@@ -885,7 +930,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                 TiebreakerRelativity::new(
                     relativity.player1().clone(), 
                     relativity.player2().clone(), 
-                    relativity.bullet_win_probability() * player1_penalty * player2_penalty
+                    relativity.fifth_bullet_win_probability() * player1_penalty * player2_penalty
                 )
             })
             .collect();
@@ -1504,7 +1549,7 @@ fn get_total_win_probability(match_result: MatchResult, player_relativities: &Ve
             TiebreakerRelativity::new(
                 relativity.player1().clone(), 
                 relativity.player2().clone(), 
-                relativity.bullet_win_probability() * player1_penalty * player2_penalty
+                relativity.fifth_bullet_win_probability() * player1_penalty * player2_penalty
             )
         })
         .collect();

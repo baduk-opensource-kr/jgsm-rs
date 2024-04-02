@@ -11,6 +11,8 @@ pub struct Player {
     rapid_weight: f64,
     blitz_weight: f64,
     bullet_weight: f64,
+    white_weight: f64,
+    black_weight: f64,
 }
 
 impl Player {
@@ -24,6 +26,8 @@ impl Player {
         rapid_weight: f64,
         blitz_weight: f64,
         bullet_weight: f64,
+        white_weight: f64,
+        black_weight: f64,
     ) -> Player {
         Player {
             korean_name,
@@ -35,6 +39,8 @@ impl Player {
             rapid_weight,
             blitz_weight,
             bullet_weight,
+            white_weight,
+            black_weight,
         }
     }
 
@@ -70,6 +76,14 @@ impl Player {
         self.bullet_weight
     }
 
+    pub fn white_weight(&self) -> f64 {
+        self.white_weight
+    }
+
+    pub fn black_weight(&self) -> f64 {
+        self.black_weight
+    }
+
     pub fn set_elo_rating(&mut self, elo_rating: f64) {
         self.elo_rating = elo_rating;
     }
@@ -88,6 +102,14 @@ impl Player {
 
     pub fn set_bullet_weight(&mut self, bullet_weight: f64) {
         self.bullet_weight = bullet_weight;
+    }
+    
+    pub fn set_white_weight(&mut self, white_weight: f64) {
+        self.white_weight = white_weight;
+    }
+
+    pub fn set_black_weight(&mut self, black_weight: f64) {
+        self.black_weight = black_weight;
     }
 
     pub fn get_days_since_birth(&self) -> f64 {

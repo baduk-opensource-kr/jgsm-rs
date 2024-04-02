@@ -57,11 +57,11 @@ fn interpolate(relative_probability: f64, standard_error: f64, base_probability:
     }
 }
 
-pub fn fetch_player_ratings_on_baeteil() -> Result<(HashMap<String, f64>, String), Box<dyn std::error::Error>> {
+pub fn fetch_player_ratings_on_baeteil(year: &str, month: &str) -> Result<(HashMap<String, f64>, String), Box<dyn std::error::Error>> {
     let mut ratings = HashMap::new();
     let client = reqwest::blocking::Client::new();
     let res = client.post("http://baduk.or.kr/record/rankingPlayer_in.asp")
-        .form(&[("pageNo", "1"), ("keyColumn", &chrono::Utc::now().year().to_string()), ("keyWord", &chrono::Utc::now().month().to_string()), ("etcKey1", "1")])
+        .form(&[("pageNo", "1"), ("keyColumn", year), ("keyWord", month), ("etcKey1", "1")])
         .send()?;
     let body = res.text()?;
     let document = Html::parse_document(&body);
@@ -198,7 +198,7 @@ pub fn fetch_head_to_head_record(gisa1: &str, gisa2: &str) -> Result<HashMap<Str
 }
 
 pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box<dyn Error>> {
-    let (player_ratings_on_baeteil, ranking_month) = fetch_player_ratings_on_baeteil()?;
+    let (player_ratings_on_baeteil, ranking_month) = fetch_player_ratings_on_baeteil(&chrono::Utc::now().year().to_string(), &chrono::Utc::now().month().to_string())?;
     let player_ratings_on_goratings = fetch_player_ratings_on_goratings()?;
 
     for team in selected_teams.iter_mut() {
@@ -214,6 +214,11 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                 }
                 player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
                 player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+
+                if let Ok((white_weight, black_weight)) = get_color_weight(player.korean_name()) {
+                    player.set_white_weight(white_weight);
+                    player.set_black_weight(black_weight);
+                }
             } else if let Some(&rating) = player_ratings_on_goratings.get(player.english_name()) {
                 match get_recent_record(player.korean_name(), rating, &player_ratings_on_baeteil, ranking_month.clone()) {
                     Ok(current_rating) => {
@@ -641,7 +646,7 @@ pub fn select_team_combination(team: &Team) -> Vec<&Player> {
 }
 
 pub fn filter_team1_lineups(selected_teams: &[Team], team1_all_lineups: &[Lineup]) -> Vec<Lineup> {
-    let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), NaiveDate::from_ymd_opt(2000, 1, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0);
+    let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), NaiveDate::from_ymd_opt(2000, 1, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     let mut team1_combination: Vec<&Player> = Vec::new();
     println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name());
@@ -1573,4 +1578,100 @@ fn redistribute_scores(a: f64, b: f64, c: f64, d: f64) -> (f64, f64, f64, f64) {
     let redistributed_scores: Vec<f64> = adjusted_scores.iter().map(|&score| if score > 0.0 { score / new_total_score * total_score } else { 0.0 }).collect();
 
     (redistributed_scores[0], redistributed_scores[1], redistributed_scores[2], redistributed_scores[3])
+}
+
+pub fn get_color_weight(gisa1: &str) -> Result<(f64, f64), Box<dyn Error>> {
+    let current_date = chrono::Utc::now();
+    let three_months_ago = current_date - chrono::Duration::try_days(90).unwrap();
+    let three_months_ago_year = three_months_ago.year().to_string();
+    let three_months_ago_month = three_months_ago.month().to_string();
+
+    let (rating_list, _) = fetch_player_ratings_on_baeteil(&three_months_ago_year, &three_months_ago_month)?;
+
+    let mut white_rating = baeteil_to_goratings(*rating_list.get(gisa1).unwrap_or(&0.0));
+    let mut black_rating = baeteil_to_goratings(*rating_list.get(gisa1).unwrap_or(&0.0));
+
+    let re = Regex::new(r"choice\('[^']+', ?'(\d+)', ?'\d+'\)").unwrap();
+    let choice_selector = Selector::parse("li[onclick]").unwrap();
+
+    let url1 = format!("http://baduk.or.kr/common/search_pro.asp?keyword={}&R_name=player1&R_code=player1_code", gisa1);
+    let body1 = reqwest::blocking::get(&url1)?.text()?;
+    let document1 = Html::parse_document(&body1);
+    let script_texts1 = document1.select(&choice_selector).map(|script| script.value().attr("onclick").unwrap_or_default().to_string()).collect::<Vec<_>>();
+    let script_text1 = script_texts1.first().unwrap(); // 첫번째만 사용하도록 변경
+    let gisa_code = re.captures(script_text1).and_then(|cap| cap.get(1).map(|match_| match_.as_str().parse::<i32>().ok())).flatten().unwrap_or_default();
+
+    let mut matches_to_process = Vec::new();
+
+    let mut page_no = 1;
+    loop {
+        let url3 = format!("http://baduk.or.kr/record/diary_in.asp?foreignKey=&pageNo={}&keyWord={}&etcKey=&etc2=1", page_no, gisa_code);
+        let body3 = reqwest::blocking::get(&url3)?.text()?;
+        let document3 = Html::parse_document(&body3);
+
+        let match_selector = Selector::parse("tbody>tr").unwrap();
+        let date_selector = Selector::parse("td.no").unwrap();
+
+        let matches: Vec<_> = document3.select(&match_selector).collect();
+        if matches.is_empty() {
+            break;
+        }
+        let mut break_loop = false;
+
+        for selected_match in matches.iter() {
+            if let Some(date_element) = selected_match.select(&date_selector).next() {
+
+                let date_text = date_element.text().collect::<String>();
+
+                if let Ok(date) = NaiveDate::parse_from_str(&date_text, "%Y-%m-%d") {
+                    let three_months_ago_date = NaiveDate::from_ymd_opt(three_months_ago.year(), three_months_ago.month(), 1).unwrap();
+
+                    if date > three_months_ago_date {
+                        let player_names = selected_match.select(&Selector::parse("td").unwrap())
+                            .enumerate()
+                            .filter_map(|(index, element)| {
+                                if index == 2 || index == 3 || index == 4 {
+                                    Some(element.text().collect::<String>())
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect::<Vec<_>>();
+                        matches_to_process.push(player_names);
+                    } else {
+                        break_loop = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if break_loop {
+            break;
+        }
+
+        page_no += 1;
+    }
+
+    for players in matches_to_process.iter().rev() {
+        let winner_text = players.first().unwrap().clone();
+        
+        let gisa2 = if !winner_text.contains(gisa1) { &players[0] } else { &players[1] };
+        if let Some(gisa2_rating) = rating_list.get(gisa2) {
+            let is_win = if winner_text.contains(gisa1) { 1.0 } else { 0.0 };
+            if (players[2].contains("백") && is_win == 1.0) || (players[2].contains("흑") && is_win == 0.0) {
+                let win_probability = calculate_win_probability(white_rating, baeteil_to_goratings(*gisa2_rating));
+                white_rating += 10.0 * (is_win - win_probability);
+            } else if (players[2].contains("흑") && is_win == 1.0) || (players[2].contains("백") && is_win == 0.0) {
+                let win_probability = calculate_win_probability(black_rating, baeteil_to_goratings(*gisa2_rating));
+                black_rating += 10.0 * (is_win - win_probability);
+            }
+        }
+    }
+
+    let average_rating = (white_rating + black_rating) / 2.0;
+    let white_weight = white_rating - average_rating;
+    let black_weight = black_rating - average_rating;
+
+    Ok((white_weight, black_weight))
 }

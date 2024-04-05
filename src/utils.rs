@@ -768,7 +768,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             let today_20_clock = now.with_hour(20).unwrap().with_minute(0).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
             let livedtl_datetime = now.with_hour(livedtl_hour).unwrap().with_minute(livedtl_minute).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
 
-            if text.contains("KB") || text.contains("韩国围甲") && livedtl_datetime < today_20_clock {
+            if (text.contains("KB") || text.contains("韩国围甲") || text.contains("韩围甲")) && livedtl_datetime < today_20_clock {
                 let mut live_win_probability = 50.0;
                 let (name1, elo1, elo2) = if text.contains(match_result.first_rapid().player1().chinese_name()) && text.contains(match_result.first_rapid().player2().chinese_name()) {
                     (
@@ -838,7 +838,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                         50.0
                     };
 
-                    live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (-0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (-0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + 1.0)
+                    live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + 1.0)
                 } else {
                     c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
                     let winner = if let Ok(element) = match_element.find(Locator::Css("span.livedtl_tag_black")).await {
@@ -953,7 +953,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
             let today_20_clock = now.with_hour(20).unwrap().with_minute(0).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
             let livedtl_datetime = now.with_hour(livedtl_hour).unwrap().with_minute(livedtl_minute).unwrap().with_second(0).unwrap().with_nanosecond(0).unwrap();
 
-            if text.contains("KB") || text.contains("韩国围甲") && livedtl_datetime < today_20_clock {
+            if (text.contains("KB") || text.contains("韩国围甲") || text.contains("韩围甲")) && livedtl_datetime < today_20_clock {
                 let b_player = match_element.find(Locator::Css("div.livedtl_first")).await.expect("div.livedtl_first 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
                 let w_player = match_element.find(Locator::Css("div.livedtl_third")).await.expect("div.livedtl_third 요소를 찾는 중 오류가 발생했습니다.").text().await.expect("텍스트를 가져오는 중 오류가 발생했습니다.");
 
@@ -1003,7 +1003,7 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
                         };
 
                         let current_elo_win_probability = tiebreaker.win_probability();
-                        tiebreaker_live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (-0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (-0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + 1.0)
+                        tiebreaker_live_win_probability = (ai_win * ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + current_elo_win_probability) / (ai_title_font * now_sn * now_sn * now_sn * ((elo1 + elo2) * 0.0000000002 - 0.0000025) * (2.5351 - (0.0315 * current_elo_win_probability) - (0.0315 * ai_win) + (0.00008 * current_elo_win_probability * current_elo_win_probability) + (0.00008 * ai_win * ai_win) + (0.00047 * current_elo_win_probability * ai_win)) + 1.0)
                     } else {
                         c.update_timeouts(TimeoutConfiguration::new(Some(Duration::from_secs(10)), Some(Duration::from_secs(10)), Some(Duration::from_secs(10)))).await.expect("타임아웃 설정 실패");
                         let winner = if let Ok(element) = match_element.find(Locator::Css("span.livedtl_tag_black")).await {

@@ -1,4 +1,5 @@
 mod kbleague;
+mod kbleague_post;
 mod models;
 mod utils;
 
@@ -7,7 +8,7 @@ use std::io;
 fn main() {
     loop {
         println!("1. KB바둑리그");
-        println!("2. KB바둑리그 파워랭킹");
+        println!("2. KB바둑리그 포스트시즌");
         println!("3. 여자바둑리그(개발중)");
         println!("4. 여자바둑리그 파워랭킹(개발중)");
         println!("5. 시니어바둑리그(개발중)");
@@ -23,7 +24,7 @@ fn main() {
                 kbleague::execute_kbleague();
             },
             "2" => {
-                kbleague::execute_kbleague_power_ranking();
+                // kbleague::execute_kbleague_power_ranking();
             },
             "exit" => break,
             _ => println!("잘못된 입력입니다. 다시 입력해주세요."),

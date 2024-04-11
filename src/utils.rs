@@ -1721,8 +1721,6 @@ pub fn get_relative_and_color_weight(gisa1: &str, other_team: &Team) -> Result<(
 
     let current_date = chrono::Utc::now();
     let three_years_ago = current_date - chrono::Duration::try_days(1095).unwrap();
-    // let three_years_ago_year = three_years_ago.year().to_string();
-    // let three_years_ago_month = three_years_ago.month().to_string();
     let three_years_ago_date = NaiveDate::from_ymd_opt(three_years_ago.year(), three_years_ago.month(), 1).unwrap();
 
     let re = Regex::new(r"choice\('[^']+', ?'(\d+)', ?'\d+'\)").unwrap();
@@ -1829,7 +1827,7 @@ pub fn get_relative_and_color_weight(gisa1: &str, other_team: &Team) -> Result<(
 
         let elapsed_days = match_date.signed_duration_since(three_years_ago_date).num_days() as f64;
         let color_base_weight = elapsed_days * 0.003;
-        let relative_base_weight = elapsed_days * 0.03;
+        let relative_base_weight = elapsed_days * 0.02;
 
         let gisa2 = if !winner_text.contains(gisa1) { match_result.get("winner_name").unwrap() } else { match_result.get("loser_name").unwrap() };
         if let Some(gisa2_rating) = rating_list.get(gisa2.as_str()) {

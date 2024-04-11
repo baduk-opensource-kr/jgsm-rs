@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use std::collections::HashMap;
 
 #[derive(Clone, PartialEq)]
 pub struct Player {
@@ -13,6 +14,7 @@ pub struct Player {
     bullet_weight: f64,
     white_weight: f64,
     black_weight: f64,
+    relative_weight: HashMap<String, f64>,
 }
 
 impl Player {
@@ -28,6 +30,7 @@ impl Player {
         bullet_weight: f64,
         white_weight: f64,
         black_weight: f64,
+        relative_weight: HashMap<String, f64>,
     ) -> Player {
         Player {
             korean_name,
@@ -41,6 +44,7 @@ impl Player {
             bullet_weight,
             white_weight,
             black_weight,
+            relative_weight,
         }
     }
 
@@ -84,6 +88,10 @@ impl Player {
         self.black_weight
     }
 
+    pub fn relative_weight(&self) -> &HashMap<String, f64> {
+        &self.relative_weight
+    }
+
     pub fn set_elo_rating(&mut self, elo_rating: f64) {
         self.elo_rating = elo_rating;
     }
@@ -110,6 +118,10 @@ impl Player {
 
     pub fn set_black_weight(&mut self, black_weight: f64) {
         self.black_weight = black_weight;
+    }
+
+    pub fn set_relative_weight(&mut self, relative_weight: HashMap<String, f64>) {
+        self.relative_weight = relative_weight;
     }
 
     pub fn get_days_since_birth(&self) -> f64 {

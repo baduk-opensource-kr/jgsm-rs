@@ -28,24 +28,24 @@ pub fn calculate_win_probability(player1_elo: f64, player2_elo: f64) -> f64 {
     probability
 }
 
-pub fn calculate_win_probability_with_relative_record(player1_elo: f64, player2_elo: f64, player1_wins: u32, player2_wins: u32) -> f64 {
-    let base_probability = calculate_win_probability(player1_elo, player2_elo);
-    let total_games = player1_wins + player2_wins;
-    let win_rate_difference = if total_games > 0 {
-        player1_wins as f64 / total_games as f64
-    } else {
-        0.5
-    };
+// pub fn calculate_win_probability_with_relative_record(player1_elo: f64, player2_elo: f64, player1_wins: u32, player2_wins: u32) -> f64 {
+//     let base_probability = calculate_win_probability(player1_elo, player2_elo);
+//     let total_games = player1_wins + player2_wins;
+//     let win_rate_difference = if total_games > 0 {
+//         player1_wins as f64 / total_games as f64
+//     } else {
+//         0.5
+//     };
 
-    interpolate(win_rate_difference, ((standard_error(base_probability, total_games as f64) * 2.0) + 1.0) / 2.0, base_probability)
-}
+//     interpolate(win_rate_difference, ((standard_error(base_probability, total_games as f64) * 2.0) + 1.0) / 2.0, base_probability)
+// }
 
-fn standard_error(base_probability: f64, total_games: f64) -> f64 {
-    if total_games <= 0.0 {
-        return 0.5;
-    }
-    (base_probability * (1.0 - base_probability) / total_games).sqrt()
-}
+// fn standard_error(base_probability: f64, total_games: f64) -> f64 {
+//     if total_games <= 0.0 {
+//         return 0.5;
+//     }
+//     (base_probability * (1.0 - base_probability) / total_games).sqrt()
+// }
 
 fn interpolate(relative_probability: f64, standard_error: f64, base_probability: f64) -> f64 {
     if standard_error <= 0.0 {
@@ -201,35 +201,81 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
     let (player_ratings_on_baeteil, ranking_month) = fetch_player_ratings_on_baeteil(&chrono::Utc::now().year().to_string(), &chrono::Utc::now().month().to_string())?;
     let player_ratings_on_goratings = fetch_player_ratings_on_goratings()?;
 
-    for team in selected_teams.iter_mut() {
-        for player in team.players_mut().iter_mut() {
-            if let Some(&rating) = player_ratings_on_baeteil.get(player.korean_name()) {
-                match get_recent_record(player.korean_name(), baeteil_to_goratings(rating), &player_ratings_on_baeteil, ranking_month.clone()) {
-                    Ok(current_rating) => {
-                        player.set_elo_rating(current_rating);
-                    },
-                    Err(_) => {
-                        player.set_elo_rating(baeteil_to_goratings(rating));
-                    }
-                }
-                player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
-                player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+    let teams = selected_teams.split_at_mut(1);
+    let (team1, team2) = (teams.0.get_mut(0).unwrap(), teams.1.get_mut(0).unwrap());
 
-                if let Ok((white_weight, black_weight)) = get_color_weight(player.korean_name()) {
-                    player.set_white_weight(white_weight);
-                    player.set_black_weight(black_weight);
+    for player in team1.players_mut().iter_mut() {
+        if let Some(&rating) = player_ratings_on_baeteil.get(player.korean_name()) {
+            match get_recent_record(player.korean_name(), baeteil_to_goratings(rating), &player_ratings_on_baeteil, ranking_month.clone()) {
+                Ok(current_rating) => {
+                    player.set_elo_rating(current_rating);
+                },
+                Err(_) => {
+                    player.set_elo_rating(baeteil_to_goratings(rating));
                 }
-            } else if let Some(&rating) = player_ratings_on_goratings.get(player.english_name()) {
-                match get_recent_record(player.korean_name(), rating, &player_ratings_on_baeteil, ranking_month.clone()) {
-                    Ok(current_rating) => {
-                        player.set_elo_rating(current_rating);
-                    },
-                    Err(_) => {
-                        player.set_elo_rating(rating);
-                    }
+            }
+            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
+            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+
+            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team2) {
+                player.set_white_weight(white_weight);
+                player.set_black_weight(black_weight);
+                player.set_relative_weight(relative_weight_list);
+            }
+        } else if let Some(&rating) = player_ratings_on_goratings.get(player.english_name()) {
+            match get_recent_record(player.korean_name(), rating, &player_ratings_on_baeteil, ranking_month.clone()) {
+                Ok(current_rating) => {
+                    player.set_elo_rating(current_rating);
+                },
+                Err(_) => {
+                    player.set_elo_rating(rating);
                 }
-                player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
-                player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+            }
+            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
+            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+
+            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team2) {
+                player.set_white_weight(white_weight);
+                player.set_black_weight(black_weight);
+                player.set_relative_weight(relative_weight_list);
+            }
+        }
+    }
+
+    for player in team2.players_mut().iter_mut() {
+        if let Some(&rating) = player_ratings_on_baeteil.get(player.korean_name()) {
+            match get_recent_record(player.korean_name(), baeteil_to_goratings(rating), &player_ratings_on_baeteil, ranking_month.clone()) {
+                Ok(current_rating) => {
+                    player.set_elo_rating(current_rating);
+                },
+                Err(_) => {
+                    player.set_elo_rating(baeteil_to_goratings(rating));
+                }
+            }
+            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
+            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+
+            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team1) {
+                player.set_white_weight(white_weight);
+                player.set_black_weight(black_weight);
+                player.set_relative_weight(relative_weight_list);
+            }
+        } else if let Some(&rating) = player_ratings_on_goratings.get(player.english_name()) {
+            match get_recent_record(player.korean_name(), rating, &player_ratings_on_baeteil, ranking_month.clone()) {
+                Ok(current_rating) => {
+                    player.set_elo_rating(current_rating);
+                },
+                Err(_) => {
+                    player.set_elo_rating(rating);
+                }
+            }
+            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
+            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+
+            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team1) {
+                player.set_white_weight(white_weight);
+                player.set_black_weight(black_weight);
+                player.set_relative_weight(relative_weight_list);
             }
         }
     }
@@ -264,11 +310,26 @@ pub fn generate_player_relativities(selected_teams: &Vec<Team>, first_rapid_blac
 
             if first_rapid_none_color {
                 if first_rapid_black {
-                    let first_rapid_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + player1.black_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + player2.white_weight()) as f64, player1_wins, player2_wins);
-                    let second_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight()) as f64, player1_wins, player2_wins);
-                    let third_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight()) as f64, player1_wins, player2_wins);
-                    let forth_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight()) as f64, player1_wins, player2_wins);
-                    let fifth_bullet_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + player1.black_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + player2.white_weight()) as f64, player1_wins, player2_wins);
+                    let first_rapid_win_probability = calculate_win_probability(
+                        (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                    );
+                    let second_blitz_win_probability = calculate_win_probability(
+                        (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                    );
+                    let third_blitz_win_probability = calculate_win_probability(
+                        (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                    );
+                    let forth_blitz_win_probability = calculate_win_probability(
+                        (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                    );
+                    let fifth_bullet_win_probability = calculate_win_probability(
+                        (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                    );
 
                     all_relative_records.push(PlayerRelativity::new(
                         player1.clone(),
@@ -282,11 +343,26 @@ pub fn generate_player_relativities(selected_teams: &Vec<Team>, first_rapid_blac
                         fifth_bullet_win_probability * 100.0,
                     ));
                 } else {
-                    let first_rapid_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + player1.white_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + player2.black_weight()) as f64, player1_wins, player2_wins);
-                    let second_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight()) as f64, player1_wins, player2_wins);
-                    let third_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight()) as f64, player1_wins, player2_wins);
-                    let forth_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight()) as f64, player1_wins, player2_wins);
-                    let fifth_bullet_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + player1.white_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + player2.black_weight()) as f64, player1_wins, player2_wins);
+                    let first_rapid_win_probability = calculate_win_probability(
+                        (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                    );
+                    let second_blitz_win_probability = calculate_win_probability(
+                        (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                    );
+                    let third_blitz_win_probability = calculate_win_probability(
+                        (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                    );
+                    let forth_blitz_win_probability = calculate_win_probability(
+                        (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                    );
+                    let fifth_bullet_win_probability = calculate_win_probability(
+                        (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                    );
 
                     all_relative_records.push(PlayerRelativity::new(
                         player1.clone(),
@@ -301,11 +377,26 @@ pub fn generate_player_relativities(selected_teams: &Vec<Team>, first_rapid_blac
                     ));
                 }
             } else {
-                let first_rapid_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.rapid_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight()) as f64, player1_wins, player2_wins);
-                let second_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight()) as f64, player1_wins, player2_wins);
-                let third_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight()) as f64, player1_wins, player2_wins);
-                let forth_blitz_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.blitz_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight()) as f64, player1_wins, player2_wins);
-                let fifth_bullet_win_probability = calculate_win_probability_with_relative_record((player1.elo_rating() + player1.condition_weight() + player1.bullet_weight()) as f64, (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight()) as f64, player1_wins, player2_wins);
+                let first_rapid_win_probability = calculate_win_probability(
+                    (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                    (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                );
+                let second_blitz_win_probability = calculate_win_probability(
+                    (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                    (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                );
+                let third_blitz_win_probability = calculate_win_probability(
+                    (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                    (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                );
+                let forth_blitz_win_probability = calculate_win_probability(
+                    (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                    (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                );
+                let fifth_bullet_win_probability = calculate_win_probability(
+                    (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                    (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                );
 
                 all_relative_records.push(PlayerRelativity::new(
                     player1.clone(),
@@ -691,7 +782,7 @@ pub fn select_team_combination(team: &Team) -> Vec<&Player> {
 }
 
 pub fn filter_team1_lineups(selected_teams: &[Team], team1_all_lineups: &[Lineup]) -> Vec<Lineup> {
-    let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), NaiveDate::from_ymd_opt(2000, 1, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), NaiveDate::from_ymd_opt(2000, 1, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new());
 
     let mut team1_combination: Vec<&Player> = Vec::new();
     println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name());
@@ -1625,16 +1716,14 @@ fn redistribute_scores(a: f64, b: f64, c: f64, d: f64) -> (f64, f64, f64, f64) {
     (redistributed_scores[0], redistributed_scores[1], redistributed_scores[2], redistributed_scores[3])
 }
 
-pub fn get_color_weight(gisa1: &str) -> Result<(f64, f64), Box<dyn Error>> {
+pub fn get_relative_and_color_weight(gisa1: &str, other_team: &Team) -> Result<(f64, f64, HashMap<String, f64>), Box<dyn Error>> {
+    let other_team_players = other_team.players().clone();
+
     let current_date = chrono::Utc::now();
-    let three_months_ago = current_date - chrono::Duration::try_days(90).unwrap();
-    let three_months_ago_year = three_months_ago.year().to_string();
-    let three_months_ago_month = three_months_ago.month().to_string();
-
-    let (rating_list, _) = fetch_player_ratings_on_baeteil(&three_months_ago_year, &three_months_ago_month)?;
-
-    let mut white_rating = baeteil_to_goratings(*rating_list.get(gisa1).unwrap_or(&0.0));
-    let mut black_rating = baeteil_to_goratings(*rating_list.get(gisa1).unwrap_or(&0.0));
+    let three_years_ago = current_date - chrono::Duration::try_days(1095).unwrap();
+    // let three_years_ago_year = three_years_ago.year().to_string();
+    // let three_years_ago_month = three_years_ago.month().to_string();
+    let three_years_ago_date = NaiveDate::from_ymd_opt(three_years_ago.year(), three_years_ago.month(), 1).unwrap();
 
     let re = Regex::new(r"choice\('[^']+', ?'(\d+)', ?'\d+'\)").unwrap();
     let choice_selector = Selector::parse("li[onclick]").unwrap();
@@ -1669,10 +1758,9 @@ pub fn get_color_weight(gisa1: &str) -> Result<(f64, f64), Box<dyn Error>> {
                 let date_text = date_element.text().collect::<String>();
 
                 if let Ok(date) = NaiveDate::parse_from_str(&date_text, "%Y-%m-%d") {
-                    let three_months_ago_date = NaiveDate::from_ymd_opt(three_months_ago.year(), three_months_ago.month(), 1).unwrap();
-
-                    if date > three_months_ago_date {
-                        let player_names = selected_match.select(&Selector::parse("td").unwrap())
+                    if date > three_years_ago_date {
+                        let mut match_result = HashMap::new();
+                        let td_texts: Vec<_> = selected_match.select(&Selector::parse("td").unwrap())
                             .enumerate()
                             .filter_map(|(index, element)| {
                                 if index == 2 || index == 3 || index == 4 {
@@ -1681,8 +1769,16 @@ pub fn get_color_weight(gisa1: &str) -> Result<(f64, f64), Box<dyn Error>> {
                                     None
                                 }
                             })
-                            .collect::<Vec<_>>();
-                        matches_to_process.push(player_names);
+                            .collect();
+                        if td_texts[2].contains("백") {
+                            match_result.insert("winner_color", "백".to_string());
+                        } else {
+                            match_result.insert("winner_color", "흑".to_string());
+                        }
+                        match_result.insert("winner_name", td_texts[0].clone());
+                        match_result.insert("loser_name", td_texts[1].clone());
+                        match_result.insert("date", date_text);
+                        matches_to_process.push(match_result);
                     } else {
                         break_loop = true;
                         break;
@@ -1698,25 +1794,70 @@ pub fn get_color_weight(gisa1: &str) -> Result<(f64, f64), Box<dyn Error>> {
         page_no += 1;
     }
 
-    for players in matches_to_process.iter().rev() {
-        let winner_text = players.first().unwrap().clone();
-        
-        let gisa2 = if !winner_text.contains(gisa1) { &players[0] } else { &players[1] };
-        if let Some(gisa2_rating) = rating_list.get(gisa2) {
+    let mut last_month = 0;
+    let mut rating_list = HashMap::new();
+    let mut relative_rating_list = other_team_players.iter().map(|player| (player.korean_name().clone(), 0.0)).collect::<HashMap<String, _>>();
+    let mut base_rating = 0.0;
+    let mut white_rating = 0.0;
+    let mut black_rating = 0.0;
+    let mut relative_weight_list = other_team_players.iter().map(|player| (player.korean_name().clone(), 0.0)).collect::<HashMap<String, _>>();
+    let mut white_weight = 0.0;
+    let mut black_weight = 0.0;
+
+    for match_result in matches_to_process.iter().rev() {
+        let winner_text = match_result.get("winner_name").unwrap().clone();
+        let match_date = NaiveDate::parse_from_str(match_result.get("date").unwrap(), "%Y-%m-%d").unwrap();
+        let match_month = match_date.month();
+
+        if match_month != last_month {
+            let (new_rating_list, new_white_rating, new_black_rating) = get_color_rating(gisa1, &match_date.year().to_string(), &match_month.to_string())?;
+            rating_list = new_rating_list;
+
+            for (player, rating) in &relative_rating_list {
+                *relative_weight_list.entry(player.clone()).or_insert(0.0) += *rating;
+            }
+            let average_rating = (white_rating + black_rating) / 2.0;
+            white_weight += white_rating - average_rating;
+            black_weight += black_rating - average_rating;
+
+            relative_rating_list = other_team_players.iter().map(|player| (player.korean_name().clone(), 0.0)).collect::<HashMap<String, _>>();
+            base_rating = new_white_rating.clone();
+            white_rating = new_white_rating;
+            black_rating = new_black_rating;
+            last_month = match_month;
+        }
+
+        let elapsed_days = match_date.signed_duration_since(three_years_ago_date).num_days() as f64;
+        let color_base_weight = elapsed_days * 0.003;
+        let relative_base_weight = elapsed_days * 0.03;
+
+        let gisa2 = if !winner_text.contains(gisa1) { match_result.get("winner_name").unwrap() } else { match_result.get("loser_name").unwrap() };
+        if let Some(gisa2_rating) = rating_list.get(gisa2.as_str()) {
             let is_win = if winner_text.contains(gisa1) { 1.0 } else { 0.0 };
-            if (players[2].contains("백") && is_win == 1.0) || (players[2].contains("흑") && is_win == 0.0) {
+
+            if other_team_players.iter().any(|player| player.korean_name() == gisa2) {
+                let win_probability = calculate_win_probability(base_rating, baeteil_to_goratings(*gisa2_rating));
+                *relative_rating_list.entry(gisa2.clone()).or_insert(0.0) += relative_base_weight * (is_win - win_probability);
+            }
+
+            if (match_result.get("winner_color").unwrap().contains("백") && is_win == 1.0) || (match_result.get("winner_color").unwrap().contains("흑") && is_win == 0.0) {
                 let win_probability = calculate_win_probability(white_rating, baeteil_to_goratings(*gisa2_rating));
-                white_rating += 10.0 * (is_win - win_probability);
-            } else if (players[2].contains("흑") && is_win == 1.0) || (players[2].contains("백") && is_win == 0.0) {
+                white_rating += color_base_weight * (is_win - win_probability);
+            } else if (match_result.get("winner_color").unwrap().contains("흑") && is_win == 1.0) || (match_result.get("winner_color").unwrap().contains("백") && is_win == 0.0) {
                 let win_probability = calculate_win_probability(black_rating, baeteil_to_goratings(*gisa2_rating));
-                black_rating += 10.0 * (is_win - win_probability);
+                black_rating += color_base_weight * (is_win - win_probability);
             }
         }
     }
 
-    let average_rating = (white_rating + black_rating) / 2.0;
-    let white_weight = white_rating - average_rating;
-    let black_weight = black_rating - average_rating;
+    Ok((white_weight, black_weight, relative_weight_list))
+}
 
-    Ok((white_weight, black_weight))
+pub fn get_color_rating(korean_name: &str, year: &str, month: &str) -> Result<(HashMap<String, f64>, f64, f64), Box<dyn Error>> {
+    let (rating_list, _) = fetch_player_ratings_on_baeteil(year, month)?;
+    Ok((
+        rating_list.clone(),
+        baeteil_to_goratings(*rating_list.get(korean_name).unwrap_or(&0.0)),
+        baeteil_to_goratings(*rating_list.get(korean_name).unwrap_or(&0.0)),
+    ))
 }

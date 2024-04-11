@@ -10,88 +10,88 @@ fn init_teams() -> Vec<Team> {
     teams.push(Team::new(
         "한국물가정보".to_string(),
         vec![
-            Player::new("강동윤".to_string(), "Kang Dongyun".to_string(), "姜东润".to_string(), NaiveDate::from_ymd_opt(1989, 1, 23).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("한승주".to_string(), "Han Seungjoo".to_string(), "韩升周".to_string(), NaiveDate::from_ymd_opt(1996, 11, 27).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("박민규".to_string(), "Park Minkyu".to_string(), "朴珉奎".to_string(), NaiveDate::from_ymd_opt(1994, 6, 5).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("최재영".to_string(), "Choi Jaeyoung".to_string(), "崔宰荣".to_string(), NaiveDate::from_ymd_opt(1997, 4, 10).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("이춘규".to_string(), "Lee Chungyu".to_string(), "李春揆".to_string(), NaiveDate::from_ymd_opt(1989, 3, 27).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("당이페이".to_string(), "Dang Yifei".to_string(), "党毅飞".to_string(), NaiveDate::from_ymd_opt(1995, 6, 17).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            Player::new("강동윤".to_string(), "Kang Dongyun".to_string(), "姜东润".to_string(), NaiveDate::from_ymd_opt(1989, 1, 23).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("한승주".to_string(), "Han Seungjoo".to_string(), "韩升周".to_string(), NaiveDate::from_ymd_opt(1996, 11, 27).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("박민규".to_string(), "Park Minkyu".to_string(), "朴珉奎".to_string(), NaiveDate::from_ymd_opt(1994, 6, 5).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("최재영".to_string(), "Choi Jaeyoung".to_string(), "崔宰荣".to_string(), NaiveDate::from_ymd_opt(1997, 4, 10).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("이춘규".to_string(), "Lee Chungyu".to_string(), "李春揆".to_string(), NaiveDate::from_ymd_opt(1989, 3, 27).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("당이페이".to_string(), "Dang Yifei".to_string(), "党毅飞".to_string(), NaiveDate::from_ymd_opt(1995, 6, 17).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
         ]
     ));
     teams.push(Team::new(
         "수려한합천".to_string(),
         vec![
-            Player::new("원성진".to_string(), "Weon Seongjin".to_string(), "元晟溱".to_string(), NaiveDate::from_ymd_opt(1985, 7, 15).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("한우진".to_string(), "Han Woojin".to_string(), "韩友赈".to_string(), NaiveDate::from_ymd_opt(2005, 6, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("송지훈".to_string(), "Song Jihoon".to_string(), "宋知勋".to_string(), NaiveDate::from_ymd_opt(1998, 2, 23).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("한태희".to_string(), "Han Taehee".to_string(), "韩态熙".to_string(), NaiveDate::from_ymd_opt(1993, 9, 17).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("윤성식".to_string(), "Yun Seongsik".to_string(), "尹圣植".to_string(), NaiveDate::from_ymd_opt(2000, 6, 25).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("김승진".to_string(), "Kim Seungjin".to_string(), "金升珍".to_string(), NaiveDate::from_ymd_opt(2006, 5, 19).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            Player::new("원성진".to_string(), "Weon Seongjin".to_string(), "元晟溱".to_string(), NaiveDate::from_ymd_opt(1985, 7, 15).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("한우진".to_string(), "Han Woojin".to_string(), "韩友赈".to_string(), NaiveDate::from_ymd_opt(2005, 6, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("송지훈".to_string(), "Song Jihoon".to_string(), "宋知勋".to_string(), NaiveDate::from_ymd_opt(1998, 2, 23).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("한태희".to_string(), "Han Taehee".to_string(), "韩态熙".to_string(), NaiveDate::from_ymd_opt(1993, 9, 17).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("윤성식".to_string(), "Yun Seongsik".to_string(), "尹圣植".to_string(), NaiveDate::from_ymd_opt(2000, 6, 25).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("김승진".to_string(), "Kim Seungjin".to_string(), "金升珍".to_string(), NaiveDate::from_ymd_opt(2006, 5, 19).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
         ]
     ));
     teams.push(Team::new(
         "마한의 심장 영암".to_string(),
         vec![
-            Player::new("안성준".to_string(), "An Sungjoon".to_string(), "安成浚".to_string(), NaiveDate::from_ymd_opt(1991, 9, 16).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("설현준".to_string(), "Seol Hyunjun".to_string(), "偰玹准".to_string(), NaiveDate::from_ymd_opt(1999, 1, 29).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("최철한".to_string(), "Choi Cheolhan".to_string(), "崔哲瀚".to_string(), NaiveDate::from_ymd_opt(1985, 3, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("박종훈".to_string(), "Park Jonghoon".to_string(), "朴钟勋".to_string(), NaiveDate::from_ymd_opt(2000, 1, 14).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("엄동건".to_string(), "Eom Donggeon".to_string(), "严动虔".to_string(), NaiveDate::from_ymd_opt(2000, 6, 9).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("쉬하오훙".to_string(), "Xu Haohong".to_string(), "许皓鋐".to_string(), NaiveDate::from_ymd_opt(2001, 4, 30).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            Player::new("안성준".to_string(), "An Sungjoon".to_string(), "安成浚".to_string(), NaiveDate::from_ymd_opt(1991, 9, 16).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("설현준".to_string(), "Seol Hyunjun".to_string(), "偰玹准".to_string(), NaiveDate::from_ymd_opt(1999, 1, 29).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("최철한".to_string(), "Choi Cheolhan".to_string(), "崔哲瀚".to_string(), NaiveDate::from_ymd_opt(1985, 3, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("박종훈".to_string(), "Park Jonghoon".to_string(), "朴钟勋".to_string(), NaiveDate::from_ymd_opt(2000, 1, 14).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("엄동건".to_string(), "Eom Donggeon".to_string(), "严动虔".to_string(), NaiveDate::from_ymd_opt(2000, 6, 9).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("쉬하오훙".to_string(), "Xu Haohong".to_string(), "许皓鋐".to_string(), NaiveDate::from_ymd_opt(2001, 4, 30).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
         ]
     ));
     teams.push(Team::new(
         "정관장천녹".to_string(),
         vec![
-            Player::new("변상일".to_string(), "Byun Sangil".to_string(), "卞相壹".to_string(), NaiveDate::from_ymd_opt(1997, 1, 14).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("홍성지".to_string(), "Hong Seongji".to_string(), "洪性志".to_string(), NaiveDate::from_ymd_opt(1987, 8, 7).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("김정현(大)".to_string(), "Kim Junghyun".to_string(), "金庭贤".to_string(), NaiveDate::from_ymd_opt(1991, 4, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("한상훈".to_string(), "Han Sanghoon".to_string(), "韩尙勋".to_string(), NaiveDate::from_ymd_opt(1988, 5, 16).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("김승구".to_string(), "Kim Seunggu".to_string(), "金丞求".to_string(), NaiveDate::from_ymd_opt(2006, 6, 13).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("박상진".to_string(), "Park Sangjin".to_string(), "朴常镇".to_string(), NaiveDate::from_ymd_opt(2001, 5, 19).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            Player::new("변상일".to_string(), "Byun Sangil".to_string(), "卞相壹".to_string(), NaiveDate::from_ymd_opt(1997, 1, 14).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("홍성지".to_string(), "Hong Seongji".to_string(), "洪性志".to_string(), NaiveDate::from_ymd_opt(1987, 8, 7).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("김정현(大)".to_string(), "Kim Junghyun".to_string(), "金庭贤".to_string(), NaiveDate::from_ymd_opt(1991, 4, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("한상훈".to_string(), "Han Sanghoon".to_string(), "韩尙勋".to_string(), NaiveDate::from_ymd_opt(1988, 5, 16).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("김승구".to_string(), "Kim Seunggu".to_string(), "金丞求".to_string(), NaiveDate::from_ymd_opt(2006, 6, 13).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("박상진".to_string(), "Park Sangjin".to_string(), "朴常镇".to_string(), NaiveDate::from_ymd_opt(2001, 5, 19).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
         ]
     ));
     teams.push(Team::new(
         "울산 고려아연".to_string(),
         vec![
-            Player::new("신민준".to_string(), "Shin Minjun".to_string(), "申旻埈".to_string(), NaiveDate::from_ymd_opt(1999, 1, 11).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("이창석".to_string(), "Lee Changseok".to_string(), "李昌锡".to_string(), NaiveDate::from_ymd_opt(1996, 4, 27).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("문민종".to_string(), "Moon Minjong".to_string(), "文敏钟".to_string(), NaiveDate::from_ymd_opt(2003, 2, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("한상조".to_string(), "Han Sangcho".to_string(), "韩相朝".to_string(), NaiveDate::from_ymd_opt(1999, 9, 28).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("김채영".to_string(), "Kim Chaeyoung".to_string(), "金彩瑛".to_string(), NaiveDate::from_ymd_opt(1996, 1, 15).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("랴오위안허".to_string(), "Liao Yuanhe".to_string(), "廖元赫".to_string(), NaiveDate::from_ymd_opt(2000, 12, 20).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            Player::new("신민준".to_string(), "Shin Minjun".to_string(), "申旻埈".to_string(), NaiveDate::from_ymd_opt(1999, 1, 11).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("이창석".to_string(), "Lee Changseok".to_string(), "李昌锡".to_string(), NaiveDate::from_ymd_opt(1996, 4, 27).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("문민종".to_string(), "Moon Minjong".to_string(), "文敏钟".to_string(), NaiveDate::from_ymd_opt(2003, 2, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("한상조".to_string(), "Han Sangcho".to_string(), "韩相朝".to_string(), NaiveDate::from_ymd_opt(1999, 9, 28).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("김채영".to_string(), "Kim Chaeyoung".to_string(), "金彩瑛".to_string(), NaiveDate::from_ymd_opt(1996, 1, 15).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("랴오위안허".to_string(), "Liao Yuanhe".to_string(), "廖元赫".to_string(), NaiveDate::from_ymd_opt(2000, 12, 20).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
         ]
     ));
     teams.push(Team::new(
         "바둑메카 의정부".to_string(),
         vec![
-            Player::new("김명훈".to_string(), "Kim Myounghoon".to_string(), "金明训".to_string(), NaiveDate::from_ymd_opt(1997, 4, 7).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("박건호".to_string(), "Park Geunho".to_string(), "朴键昊".to_string(), NaiveDate::from_ymd_opt(1998, 6, 14).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("이원영".to_string(), "Lee Wonyoung".to_string(), "李元荣".to_string(), NaiveDate::from_ymd_opt(1992, 5, 8).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("허영호".to_string(), "Heo Yongho".to_string(), "许映皓".to_string(), NaiveDate::from_ymd_opt(1986, 7, 2).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("박재근".to_string(), "Park Jaekeun".to_string(), "朴材根".to_string(), NaiveDate::from_ymd_opt(1996, 4, 16).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("양카이원".to_string(), "Yang Kaiwen".to_string(), "杨楷文".to_string(), NaiveDate::from_ymd_opt(1997, 1, 28).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            Player::new("김명훈".to_string(), "Kim Myounghoon".to_string(), "金明训".to_string(), NaiveDate::from_ymd_opt(1997, 4, 7).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("박건호".to_string(), "Park Geunho".to_string(), "朴键昊".to_string(), NaiveDate::from_ymd_opt(1998, 6, 14).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("이원영".to_string(), "Lee Wonyoung".to_string(), "李元荣".to_string(), NaiveDate::from_ymd_opt(1992, 5, 8).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("허영호".to_string(), "Heo Yongho".to_string(), "许映皓".to_string(), NaiveDate::from_ymd_opt(1986, 7, 2).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("박재근".to_string(), "Park Jaekeun".to_string(), "朴材根".to_string(), NaiveDate::from_ymd_opt(1996, 4, 16).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("양카이원".to_string(), "Yang Kaiwen".to_string(), "杨楷文".to_string(), NaiveDate::from_ymd_opt(1997, 1, 28).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
         ]
     ));
     teams.push(Team::new(
         "Kixx".to_string(),
         vec![
-            Player::new("신진서".to_string(), "Shin Jinseo".to_string(), "申真谞".to_string(), NaiveDate::from_ymd_opt(2000, 3, 17).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("박진솔".to_string(), "Park Jinsol".to_string(), "朴进率".to_string(), NaiveDate::from_ymd_opt(1986, 9, 7).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("김승재".to_string(), "Kim Seungjae".to_string(), "金升宰".to_string(), NaiveDate::from_ymd_opt(1992, 8, 11).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("백현우".to_string(), "Baek Hyeonwoo".to_string(), "白现宇".to_string(), NaiveDate::from_ymd_opt(2001, 2, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("김창훈".to_string(), "Kim Changhoon".to_string(), "金昌勋".to_string(), NaiveDate::from_ymd_opt(1995, 8, 20).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            Player::new("신진서".to_string(), "Shin Jinseo".to_string(), "申真谞".to_string(), NaiveDate::from_ymd_opt(2000, 3, 17).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("박진솔".to_string(), "Park Jinsol".to_string(), "朴进率".to_string(), NaiveDate::from_ymd_opt(1986, 9, 7).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("김승재".to_string(), "Kim Seungjae".to_string(), "金升宰".to_string(), NaiveDate::from_ymd_opt(1992, 8, 11).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("백현우".to_string(), "Baek Hyeonwoo".to_string(), "白现宇".to_string(), NaiveDate::from_ymd_opt(2001, 2, 12).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("김창훈".to_string(), "Kim Changhoon".to_string(), "金昌勋".to_string(), NaiveDate::from_ymd_opt(1995, 8, 20).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
         ]
     ));
     teams.push(Team::new(
         "원익".to_string(),
         vec![
-            Player::new("박정환".to_string(), "Park Junghwan".to_string(), "朴廷桓".to_string(), NaiveDate::from_ymd_opt(1993, 1, 11).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("이지현(남)".to_string(), "Lee Jihyun (m)".to_string(), "李志贤".to_string(), NaiveDate::from_ymd_opt(1992, 9, 30).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("박영훈".to_string(), "Park Yeonghun".to_string(), "朴永训".to_string(), NaiveDate::from_ymd_opt(1985, 4, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("김진휘".to_string(), "Kim Jinhwi".to_string(), "金真辉".to_string(), NaiveDate::from_ymd_opt(1996, 1, 26).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("금지우".to_string(), "Geum Jiwoo".to_string(), "琴沚玗".to_string(), NaiveDate::from_ymd_opt(2001, 8, 29).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            Player::new("구쯔하오".to_string(), "Gu Zihao".to_string(), "辜梓豪".to_string(), NaiveDate::from_ymd_opt(1998, 3, 13).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            Player::new("박정환".to_string(), "Park Junghwan".to_string(), "朴廷桓".to_string(), NaiveDate::from_ymd_opt(1993, 1, 11).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("이지현(남)".to_string(), "Lee Jihyun (m)".to_string(), "李志贤".to_string(), NaiveDate::from_ymd_opt(1992, 9, 30).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("박영훈".to_string(), "Park Yeonghun".to_string(), "朴永训".to_string(), NaiveDate::from_ymd_opt(1985, 4, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("김진휘".to_string(), "Kim Jinhwi".to_string(), "金真辉".to_string(), NaiveDate::from_ymd_opt(1996, 1, 26).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("금지우".to_string(), "Geum Jiwoo".to_string(), "琴沚玗".to_string(), NaiveDate::from_ymd_opt(2001, 8, 29).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
+            Player::new("구쯔하오".to_string(), "Gu Zihao".to_string(), "辜梓豪".to_string(), NaiveDate::from_ymd_opt(1998, 3, 13).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new()),
         ]
     ));
     teams
@@ -174,6 +174,7 @@ pub fn execute_kbleague() {
         loop {
             for (index, player) in selected_team.players().iter().enumerate() {
                 println!("{}. {} (elo: {:.2})\n    컨디션 가중치: {:.2}", index + 1, player.korean_name(), player.elo_rating(), player.condition_weight());
+                // println!("{}. {} (elo: {:.2})\n    컨디션 가중치: {:.2}\n    상대 가중치: {:?}", index + 1, player.korean_name(), player.elo_rating(), player.condition_weight(), player.relative_weight());
             }
             println!("컨디션 가중치를 입력할 기사를 선택하세요 (완료시 엔터): ");
             let mut input = String::new();
@@ -772,7 +773,7 @@ pub fn execute_kbleague() {
                     "7" => {
                         let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
 
-                        let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), NaiveDate::from_ymd_opt(2000, 1, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+                        let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), NaiveDate::from_ymd_opt(2000, 1, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new());
 
                         let mut team2_combination: Vec<&Player> = Vec::new();
                         println!("\n{} 팀의 스쿼드:", selected_teams[1].team_name());
@@ -962,7 +963,7 @@ pub fn execute_kbleague() {
                     "8" => {
                         let team1_filtered_lineups = utils::filter_team1_lineups(&selected_teams, &team1_all_lineups);
 
-                        let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), NaiveDate::from_ymd_opt(2000, 1, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+                        let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), NaiveDate::from_ymd_opt(2000, 1, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new());
 
                         let mut team2_combination: Vec<&Player> = Vec::new();
                         println!("\n{} 팀의 스쿼드:", selected_teams[1].team_name());

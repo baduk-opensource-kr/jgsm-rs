@@ -1835,11 +1835,11 @@ pub fn get_relative_and_color_weight(gisa1: &str, other_team: &Team) -> Result<(
         let mut color_base_weight = elapsed_days * 0.003;
         let mut relative_base_weight = elapsed_days * 0.02;
         if match_name.contains("바둑리그") {
-            color_base_weight = elapsed_days * 0.004;
-            relative_base_weight = elapsed_days * 0.04 / 3.0;
+            color_base_weight = elapsed_days * 0.006;
+            relative_base_weight = elapsed_days * 0.04;
         } else {
             color_base_weight = elapsed_days * 0.002;
-            relative_base_weight = elapsed_days * 0.08 / 3.0;
+            relative_base_weight = elapsed_days * 0.04 / 3.0;
         }
 
         let gisa2 = if !winner_text.contains(gisa1) { match_result.get("winner_name").unwrap() } else { match_result.get("loser_name").unwrap() };

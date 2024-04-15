@@ -283,7 +283,6 @@ pub fn execute_kbleague() {
             for (k, v) in relative_weights {
                 println!("{}: {:.2}", k, v);
             }
-            // println!("{:?}", player.relative_weight().iter().map(|(k, v)| (k, format!("{:.2}", v))).collect::<HashMap<_, _>>());
         }
     }
 

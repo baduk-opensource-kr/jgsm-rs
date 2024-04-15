@@ -24,7 +24,7 @@ fn main() {
                 kbleague::execute_kbleague();
             },
             "2" => {
-                // kbleague::execute_kbleague_power_ranking();
+                kbleague_post::execute_kbleague_post();
             },
             "exit" => break,
             _ => println!("잘못된 입력입니다. 다시 입력해주세요."),

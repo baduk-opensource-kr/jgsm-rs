@@ -190,13 +190,6 @@ pub struct PlayerRelativity {
     player2: Player,
     player1_wins: u32,
     player2_wins: u32,
-
-    // elo_win_probability: f64,
-    // condition_win_probability: f64,
-    // rapid_win_probability: f64,
-    // blitz_win_probability: f64,
-    // bullet_win_probability: f64,
-
     first_rapid_win_probability: f64,
     second_blitz_win_probability: f64,
     third_blitz_win_probability: f64,
@@ -210,11 +203,6 @@ impl PlayerRelativity {
         player2: Player,
         player1_wins: u32,
         player2_wins: u32,
-        // elo_win_probability: f64,
-        // condition_win_probability: f64,
-        // rapid_win_probability: f64,
-        // blitz_win_probability: f64,
-        // bullet_win_probability: f64,
         first_rapid_win_probability: f64,
         second_blitz_win_probability: f64,
         third_blitz_win_probability: f64,
@@ -226,11 +214,6 @@ impl PlayerRelativity {
             player2,
             player1_wins,
             player2_wins,
-            // elo_win_probability,
-            // condition_win_probability,
-            // rapid_win_probability,
-            // blitz_win_probability,
-            // bullet_win_probability,
             first_rapid_win_probability,
             second_blitz_win_probability,
             third_blitz_win_probability,
@@ -254,26 +237,6 @@ impl PlayerRelativity {
     pub fn player2_wins(&self) -> u32 {
         self.player2_wins
     }
-
-    // pub fn elo_win_probability(&self) -> f64 {
-    //     self.elo_win_probability
-    // }
-
-    // pub fn condition_win_probability(&self) -> f64 {
-    //     self.condition_win_probability
-    // }
-
-    // pub fn rapid_win_probability(&self) -> f64 {
-    //     self.rapid_win_probability
-    // }
-
-    // pub fn blitz_win_probability(&self) -> f64 {
-    //     self.blitz_win_probability
-    // }
-
-    // pub fn bullet_win_probability(&self) -> f64 {
-    //     self.bullet_win_probability
-    // }
 
     pub fn first_rapid_win_probability(&self) -> f64 {
         self.first_rapid_win_probability
@@ -541,191 +504,6 @@ impl TiebreakerRelativity {
     }
 }
 
-// #[derive(Clone)]
-// pub struct PostMatchResult {
-//     first_rapid: PlayerRelativity,
-//     second_blitz: PlayerRelativity,
-//     third_blitz: PlayerRelativity,
-//     forth_blitz: PlayerRelativity,
-//     fifth_bullet: PlayerRelativity,
-//     first_rapid_win_probability: f64,
-//     second_blitz_win_probability: f64,
-//     third_blitz_win_probability: f64,
-//     forth_blitz_win_probability: f64,
-//     fifth_bullet_win_probability: f64,
-//     five_zero_probability: f64,
-//     four_one_probability: f64,
-//     three_two_probability: f64,
-//     two_three_probability: f64,
-//     one_four_probability: f64,
-//     zero_five_probability: f64,
-//     tiebreaker_win_probability: f64,
-//     total_win_probability: f64,
-// }
-
-// impl PostMatchResult {
-//     pub fn new(
-//         first_rapid: PlayerRelativity,
-//         second_blitz: PlayerRelativity,
-//         third_blitz: PlayerRelativity,
-//         forth_blitz: PlayerRelativity,
-//         fifth_bullet: PlayerRelativity,
-//         first_rapid_win_probability: f64,
-//         second_blitz_win_probability: f64,
-//         third_blitz_win_probability: f64,
-//         forth_blitz_win_probability: f64,
-//         fifth_bullet_win_probability: f64,
-//         five_zero_probability: f64,
-//         four_one_probability: f64,
-//         three_two_probability: f64,
-//         two_three_probability: f64,
-//         one_four_probability: f64,
-//         zero_five_probability: f64,
-//         tiebreaker_win_probability: f64,
-//         total_win_probability: f64,
-//     ) -> Self {
-//         Self {
-//             first_rapid,
-//             second_blitz,
-//             third_blitz,
-//             forth_blitz,
-//             fifth_bullet,
-//             first_rapid_win_probability,
-//             second_blitz_win_probability,
-//             third_blitz_win_probability,
-//             forth_blitz_win_probability,
-//             fifth_bullet_win_probability,
-//             five_zero_probability,
-//             four_one_probability,
-//             three_two_probability,
-//             two_three_probability,
-//             one_four_probability,
-//             zero_five_probability,
-//             tiebreaker_win_probability,
-//             total_win_probability,
-//         }
-//     }
-
-//     pub fn first_rapid(&self) -> &PlayerRelativity {
-//         &self.first_rapid
-//     }
-
-//     pub fn second_blitz(&self) -> &PlayerRelativity {
-//         &self.second_blitz
-//     }
-
-//     pub fn third_blitz(&self) -> &PlayerRelativity {
-//         &self.third_blitz
-//     }
-
-//     pub fn forth_blitz(&self) -> &PlayerRelativity {
-//         &self.forth_blitz
-//     }
-
-//     pub fn fifth_bullet(&self) -> &PlayerRelativity {
-//         &self.fifth_bullet
-//     }
-
-//     pub fn first_rapid_win_probability(&self) -> f64 {
-//         self.first_rapid_win_probability
-//     }
-
-//     pub fn second_blitz_win_probability(&self) -> f64 {
-//         self.second_blitz_win_probability
-//     }
-
-//     pub fn third_blitz_win_probability(&self) -> f64 {
-//         self.third_blitz_win_probability
-//     }
-
-//     pub fn forth_blitz_win_probability(&self) -> f64 {
-//         self.forth_blitz_win_probability
-//     }
-
-//     pub fn fifth_bullet_win_probability(&self) -> f64 {
-//         self.fifth_bullet_win_probability
-//     }
-
-//     pub fn five_zero_probability(&self) -> f64 {
-//         self.five_zero_probability
-//     }
-
-//     pub fn four_one_probability(&self) -> f64 {
-//         self.four_one_probability
-//     }
-
-//     pub fn three_two_probability(&self) -> f64 {
-//         self.three_two_probability
-//     }
-
-//     pub fn two_three_probability(&self) -> f64 {
-//         self.two_three_probability
-//     }
-
-//     pub fn one_four_probability(&self) -> f64 {
-//         self.one_four_probability
-//     }
-
-//     pub fn zero_five_probability(&self) -> f64 {
-//         self.zero_five_probability
-//     }
-
-//     pub fn tiebreaker_win_probability(&self) -> f64 {
-//         self.tiebreaker_win_probability
-//     }
-
-//     pub fn total_win_probability(&self) -> f64 {
-//         self.total_win_probability
-//     }
-// }
-
-// #[derive(Clone)]
-// pub struct PostLineup {
-//     first_rapid: Player,
-//     second_blitz: Player,
-//     third_blitz: Player,
-//     forth_blitz: Player,
-//     fifth_bullet: Player,
-// }
-
-// impl PostLineup {
-//     pub fn new(
-//         first_rapid: Player,
-//         second_blitz: Player,
-//         third_blitz: Player,
-//         forth_blitz: Player,
-//         fifth_bullet: Player,
-//     ) -> Self {
-//         Self {
-//             first_rapid,
-//             second_blitz,
-//             third_blitz,
-//             forth_blitz,
-//             fifth_bullet,
-//         }
-//     }
-
-//     pub fn first_rapid(&self) -> &Player {
-//         &self.first_rapid
-//     }
-
-//     pub fn second_blitz(&self) -> &Player {
-//         &self.second_blitz
-//     }
-
-//     pub fn third_blitz(&self) -> &Player {
-//         &self.third_blitz
-//     }
-
-//     pub fn forth_blitz(&self) -> &Player {
-//         &self.forth_blitz
-//     }
-
-//     pub fn fifth_bullet(&self) -> &Player {
-//         &self.fifth_bullet
-//     }
-// }
-
 pub struct WPAResult {
     first_rapid_player1_wpa: f64,
     first_rapid_player1_score: f64,
@@ -877,3 +655,374 @@ impl WPAResult {
     }
 }
 
+#[derive(Clone)]
+pub struct PostPlayerRelativity {
+    player1: Player,
+    player2: Player,
+    player1_wins: u32,
+    player2_wins: u32,
+    first_rapid_white_win_probability: f64,
+    second_blitz_white_win_probability: f64,
+    third_blitz_white_win_probability: f64,
+    forth_blitz_white_win_probability: f64,
+    fifth_bullet_white_win_probability: f64,
+    first_rapid_black_win_probability: f64,
+    second_blitz_black_win_probability: f64,
+    third_blitz_black_win_probability: f64,
+    forth_blitz_black_win_probability: f64,
+    fifth_bullet_black_win_probability: f64,
+}
+
+#[derive(Clone)]
+pub struct PostMatchResult {
+    first_rapid: PostPlayerRelativity,
+    second_blitz: PostPlayerRelativity,
+    third_blitz: PostPlayerRelativity,
+    forth_blitz: PostPlayerRelativity,
+    fifth_bullet: PostPlayerRelativity,
+    first_rapid_white_win_probability: f64,
+    second_blitz_white_win_probability: f64,
+    third_blitz_white_win_probability: f64,
+    forth_blitz_white_win_probability: f64,
+    fifth_bullet_white_win_probability: f64,
+    first_rapid_black_win_probability: f64,
+    second_blitz_black_win_probability: f64,
+    third_blitz_black_win_probability: f64,
+    forth_blitz_black_win_probability: f64,
+    fifth_bullet_black_win_probability: f64,
+    white_started_five_zero_probability: f64,
+    white_started_four_one_probability: f64,
+    white_started_three_two_probability: f64,
+    white_started_two_three_probability: f64,
+    white_started_one_four_probability: f64,
+    white_started_zero_five_probability: f64,
+    white_started_total_win_probability: f64,
+    black_started_five_zero_probability: f64,
+    black_started_four_one_probability: f64,
+    black_started_three_two_probability: f64,
+    black_started_two_three_probability: f64,
+    black_started_one_four_probability: f64,
+    black_started_zero_five_probability: f64,
+    black_started_total_win_probability: f64,
+}
+
+impl PostMatchResult {
+    pub fn new(
+        first_rapid: PostPlayerRelativity,
+        second_blitz: PostPlayerRelativity,
+        third_blitz: PostPlayerRelativity,
+        forth_blitz: PostPlayerRelativity,
+        fifth_bullet: PostPlayerRelativity,
+        first_rapid_white_win_probability: f64,
+        second_blitz_white_win_probability: f64,
+        third_blitz_white_win_probability: f64,
+        forth_blitz_white_win_probability: f64,
+        fifth_bullet_white_win_probability: f64,
+        first_rapid_black_win_probability: f64,
+        second_blitz_black_win_probability: f64,
+        third_blitz_black_win_probability: f64,
+        forth_blitz_black_win_probability: f64,
+        fifth_bullet_black_win_probability: f64,
+        white_started_five_zero_probability: f64,
+        white_started_four_one_probability: f64,
+        white_started_three_two_probability: f64,
+        white_started_two_three_probability: f64,
+        white_started_one_four_probability: f64,
+        white_started_zero_five_probability: f64,
+        white_started_total_win_probability: f64,
+        black_started_five_zero_probability: f64,
+        black_started_four_one_probability: f64,
+        black_started_three_two_probability: f64,
+        black_started_two_three_probability: f64,
+        black_started_one_four_probability: f64,
+        black_started_zero_five_probability: f64,
+        black_started_total_win_probability: f64,
+    ) -> Self {
+        Self {
+            first_rapid,
+            second_blitz,
+            third_blitz,
+            forth_blitz,
+            fifth_bullet,
+            first_rapid_white_win_probability,
+            second_blitz_white_win_probability,
+            third_blitz_white_win_probability,
+            forth_blitz_white_win_probability,
+            fifth_bullet_white_win_probability,
+            first_rapid_black_win_probability,
+            second_blitz_black_win_probability,
+            third_blitz_black_win_probability,
+            forth_blitz_black_win_probability,
+            fifth_bullet_black_win_probability,
+            white_started_five_zero_probability,
+            white_started_four_one_probability,
+            white_started_three_two_probability,
+            white_started_two_three_probability,
+            white_started_one_four_probability,
+            white_started_zero_five_probability,
+            white_started_total_win_probability,
+            black_started_five_zero_probability,
+            black_started_four_one_probability,
+            black_started_three_two_probability,
+            black_started_two_three_probability,
+            black_started_one_four_probability,
+            black_started_zero_five_probability,
+            black_started_total_win_probability,
+        }
+    }
+
+    pub fn first_rapid(&self) -> &PostPlayerRelativity {
+        &self.first_rapid
+    }
+
+    pub fn second_blitz(&self) -> &PostPlayerRelativity {
+        &self.second_blitz
+    }
+
+    pub fn third_blitz(&self) -> &PostPlayerRelativity {
+        &self.third_blitz
+    }
+
+    pub fn forth_blitz(&self) -> &PostPlayerRelativity {
+        &self.forth_blitz
+    }
+
+    pub fn fifth_bullet(&self) -> &PostPlayerRelativity {
+        &self.fifth_bullet
+    }
+
+    pub fn first_rapid_white_win_probability(&self) -> f64 {
+        self.first_rapid_white_win_probability
+    }
+
+    pub fn second_blitz_white_win_probability(&self) -> f64 {
+        self.second_blitz_white_win_probability
+    }
+
+    pub fn third_blitz_white_win_probability(&self) -> f64 {
+        self.third_blitz_white_win_probability
+    }
+
+    pub fn forth_blitz_white_win_probability(&self) -> f64 {
+        self.forth_blitz_white_win_probability
+    }
+
+    pub fn fifth_bullet_white_win_probability(&self) -> f64 {
+        self.fifth_bullet_white_win_probability
+    }
+
+    pub fn first_rapid_black_win_probability(&self) -> f64 {
+        self.first_rapid_black_win_probability
+    }
+
+    pub fn second_blitz_black_win_probability(&self) -> f64 {
+        self.second_blitz_black_win_probability
+    }
+
+    pub fn third_blitz_black_win_probability(&self) -> f64 {
+        self.third_blitz_black_win_probability
+    }
+
+    pub fn forth_blitz_black_win_probability(&self) -> f64 {
+        self.forth_blitz_black_win_probability
+    }
+
+    pub fn fifth_bullet_black_win_probability(&self) -> f64 {
+        self.fifth_bullet_black_win_probability
+    }
+
+    pub fn white_started_five_zero_probability(&self) -> f64 {
+        self.white_started_five_zero_probability
+    }
+
+    pub fn white_started_four_one_probability(&self) -> f64 {
+        self.white_started_four_one_probability
+    }
+
+    pub fn white_started_three_two_probability(&self) -> f64 {
+        self.white_started_three_two_probability
+    }
+
+    pub fn white_started_two_three_probability(&self) -> f64 {
+        self.white_started_two_three_probability
+    }
+
+    pub fn white_started_one_four_probability(&self) -> f64 {
+        self.white_started_one_four_probability
+    }
+
+    pub fn white_started_zero_five_probability(&self) -> f64 {
+        self.white_started_zero_five_probability
+    }
+
+    pub fn white_started_total_win_probability(&self) -> f64 {
+        self.white_started_total_win_probability
+    }
+
+    pub fn black_started_five_zero_probability(&self) -> f64 {
+        self.black_started_five_zero_probability
+    }
+
+    pub fn black_started_four_one_probability(&self) -> f64 {
+        self.black_started_four_one_probability
+    }
+
+    pub fn black_started_three_two_probability(&self) -> f64 {
+        self.black_started_three_two_probability
+    }
+
+    pub fn black_started_two_three_probability(&self) -> f64 {
+        self.black_started_two_three_probability
+    }
+
+    pub fn black_started_one_four_probability(&self) -> f64 {
+        self.black_started_one_four_probability
+    }
+
+    pub fn black_started_zero_five_probability(&self) -> f64 {
+        self.black_started_zero_five_probability
+    }
+
+    pub fn black_started_total_win_probability(&self) -> f64 {
+        self.black_started_total_win_probability
+    }
+}
+
+#[derive(Clone)]
+pub struct PostLineup {
+    first_rapid: Player,
+    second_blitz: Player,
+    third_blitz: Player,
+    forth_blitz: Player,
+    fifth_bullet: Player,
+}
+
+impl PostLineup {
+    pub fn new(
+        first_rapid: Player,
+        second_blitz: Player,
+        third_blitz: Player,
+        forth_blitz: Player,
+        fifth_bullet: Player,
+    ) -> Self {
+        Self {
+            first_rapid,
+            second_blitz,
+            third_blitz,
+            forth_blitz,
+            fifth_bullet,
+        }
+    }
+
+    pub fn first_rapid(&self) -> &Player {
+        &self.first_rapid
+    }
+
+    pub fn second_blitz(&self) -> &Player {
+        &self.second_blitz
+    }
+
+    pub fn third_blitz(&self) -> &Player {
+        &self.third_blitz
+    }
+
+    pub fn forth_blitz(&self) -> &Player {
+        &self.forth_blitz
+    }
+
+    pub fn fifth_bullet(&self) -> &Player {
+        &self.fifth_bullet
+    }
+}
+
+impl PostPlayerRelativity {
+    pub fn new(
+        player1: Player,
+        player2: Player,
+        player1_wins: u32,
+        player2_wins: u32,
+        first_rapid_white_win_probability: f64,
+        second_blitz_white_win_probability: f64,
+        third_blitz_white_win_probability: f64,
+        forth_blitz_white_win_probability: f64,
+        fifth_bullet_white_win_probability: f64,
+        first_rapid_black_win_probability: f64,
+        second_blitz_black_win_probability: f64,
+        third_blitz_black_win_probability: f64,
+        forth_blitz_black_win_probability: f64,
+        fifth_bullet_black_win_probability: f64,
+    ) -> Self {
+        Self {
+            player1,
+            player2,
+            player1_wins,
+            player2_wins,
+            first_rapid_white_win_probability,
+            second_blitz_white_win_probability,
+            third_blitz_white_win_probability,
+            forth_blitz_white_win_probability,
+            fifth_bullet_white_win_probability,
+            first_rapid_black_win_probability,
+            second_blitz_black_win_probability,
+            third_blitz_black_win_probability,
+            forth_blitz_black_win_probability,
+            fifth_bullet_black_win_probability,
+        }
+    }
+
+    pub fn player1(&self) -> &Player {
+        &self.player1
+    }
+
+    pub fn player2(&self) -> &Player {
+        &self.player2
+    }
+
+    pub fn player1_wins(&self) -> u32 {
+        self.player1_wins
+    }
+
+    pub fn player2_wins(&self) -> u32 {
+        self.player2_wins
+    }
+
+    pub fn first_rapid_white_win_probability(&self) -> f64 {
+        self.first_rapid_white_win_probability
+    }
+
+    pub fn second_blitz_white_win_probability(&self) -> f64 {
+        self.second_blitz_white_win_probability
+    }
+
+    pub fn third_blitz_white_win_probability(&self) -> f64 {
+        self.third_blitz_white_win_probability
+    }
+
+    pub fn forth_blitz_white_win_probability(&self) -> f64 {
+        self.forth_blitz_white_win_probability
+    }
+
+    pub fn fifth_bullet_white_win_probability(&self) -> f64 {
+        self.fifth_bullet_white_win_probability
+    }
+
+    pub fn first_rapid_black_win_probability(&self) -> f64 {
+        self.first_rapid_black_win_probability
+    }
+
+    pub fn second_blitz_black_win_probability(&self) -> f64 {
+        self.second_blitz_black_win_probability
+    }
+
+    pub fn third_blitz_black_win_probability(&self) -> f64 {
+        self.third_blitz_black_win_probability
+    }
+
+    pub fn forth_blitz_black_win_probability(&self) -> f64 {
+        self.forth_blitz_black_win_probability
+    }
+
+    pub fn fifth_bullet_black_win_probability(&self) -> f64 {
+        self.fifth_bullet_black_win_probability
+    }
+}

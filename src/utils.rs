@@ -217,7 +217,7 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
             player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
             player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
-            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team2) {
+            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team2) {
                 player.set_white_weight(white_weight);
                 player.set_black_weight(black_weight);
                 player.set_relative_weight(relative_weight_list);
@@ -234,7 +234,7 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
             player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
             player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
-            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team2) {
+            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team2) {
                 player.set_white_weight(white_weight);
                 player.set_black_weight(black_weight);
                 player.set_relative_weight(relative_weight_list);
@@ -255,7 +255,7 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
             player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
             player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
-            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team1) {
+            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team1) {
                 player.set_white_weight(white_weight);
                 player.set_black_weight(black_weight);
                 player.set_relative_weight(relative_weight_list);
@@ -272,7 +272,7 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
             player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
             player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
-            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team1) {
+            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team1) {
                 player.set_white_weight(white_weight);
                 player.set_black_weight(black_weight);
                 player.set_relative_weight(relative_weight_list);
@@ -1720,7 +1720,7 @@ fn redistribute_scores(a: f64, b: f64, c: f64, d: f64) -> (f64, f64, f64, f64) {
     (redistributed_scores[0], redistributed_scores[1], redistributed_scores[2], redistributed_scores[3])
 }
 
-pub fn get_relative_and_color_weight(gisa1: &str, other_team: &Team) -> Result<(f64, f64, HashMap<String, f64>), Box<dyn Error>> {
+pub fn get_relative_and_color_weight(gisa1: &str, gisa1_eng: &str, other_team: &Team) -> Result<(f64, f64, HashMap<String, f64>), Box<dyn Error>> {
     let other_team_players = other_team.players().clone();
 
     let current_date = chrono::Utc::now();
@@ -1814,7 +1814,7 @@ pub fn get_relative_and_color_weight(gisa1: &str, other_team: &Team) -> Result<(
         let match_month = match_date.month();
 
         if match_month != last_month {
-            let (new_rating_list, new_white_rating, new_black_rating) = get_color_rating(gisa1, &match_date.year().to_string(), &match_month.to_string())?;
+            let (new_rating_list, new_white_rating, new_black_rating) = get_color_rating(gisa1, gisa1_eng, &match_date.year().to_string(), &match_month.to_string())?;
             rating_list = new_rating_list;
 
             for (player, rating) in &relative_rating_list {
@@ -1892,7 +1892,7 @@ pub fn get_relative_and_color_weight(gisa1: &str, other_team: &Team) -> Result<(
     Ok((white_weight, black_weight, relative_weight_list))
 }
 
-pub fn get_color_rating(korean_name: &str, year: &str, month: &str) -> Result<(HashMap<String, f64>, f64, f64), Box<dyn Error>> {
+pub fn get_color_rating(korean_name: &str, english_name: &str, year: &str, month: &str) -> Result<(HashMap<String, f64>, f64, f64), Box<dyn Error>> {
     let (rating_list, _) = fetch_player_ratings_on_baeteil(year, month)?;
     if rating_list.contains_key(korean_name) {
         Ok((
@@ -1904,8 +1904,8 @@ pub fn get_color_rating(korean_name: &str, year: &str, month: &str) -> Result<(H
         let player_ratings_on_goratings = fetch_player_ratings_on_goratings()?;
         Ok((
             rating_list.clone(),
-            baeteil_to_goratings(*player_ratings_on_goratings.get(korean_name).unwrap_or(&0.0)),
-            baeteil_to_goratings(*player_ratings_on_goratings.get(korean_name).unwrap_or(&0.0)),
+            *player_ratings_on_goratings.get(english_name).unwrap_or(&0.0),
+            *player_ratings_on_goratings.get(english_name).unwrap_or(&0.0),
         ))
     }
 }

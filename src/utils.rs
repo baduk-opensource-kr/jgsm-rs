@@ -1894,11 +1894,20 @@ pub fn get_relative_and_color_weight(gisa1: &str, other_team: &Team) -> Result<(
 
 pub fn get_color_rating(korean_name: &str, year: &str, month: &str) -> Result<(HashMap<String, f64>, f64, f64), Box<dyn Error>> {
     let (rating_list, _) = fetch_player_ratings_on_baeteil(year, month)?;
-    Ok((
-        rating_list.clone(),
-        baeteil_to_goratings(*rating_list.get(korean_name).unwrap_or(&0.0)),
-        baeteil_to_goratings(*rating_list.get(korean_name).unwrap_or(&0.0)),
-    ))
+    if rating_list.contains_key(korean_name) {
+        Ok((
+            rating_list.clone(),
+            baeteil_to_goratings(*rating_list.get(korean_name).unwrap_or(&0.0)),
+            baeteil_to_goratings(*rating_list.get(korean_name).unwrap_or(&0.0)),
+        ))
+    } else {
+        let player_ratings_on_goratings = fetch_player_ratings_on_goratings()?;
+        Ok((
+            rating_list.clone(),
+            baeteil_to_goratings(*player_ratings_on_goratings.get(korean_name).unwrap_or(&0.0)),
+            baeteil_to_goratings(*player_ratings_on_goratings.get(korean_name).unwrap_or(&0.0)),
+        ))
+    }
 }
 
 pub fn generate_player_relativities_post(selected_teams: &Vec<Team>) -> Result<Vec<PostPlayerRelativity>, String> {

@@ -1834,12 +1834,23 @@ pub fn get_relative_and_color_weight(gisa1: &str, other_team: &Team) -> Result<(
         let elapsed_days = match_date.signed_duration_since(three_years_ago_date).num_days() as f64;
         let mut color_base_weight = elapsed_days * 0.003;
         let mut relative_base_weight = elapsed_days * 0.02;
-        if match_name.contains("바둑리그") {
-            color_base_weight = elapsed_days * 0.006;
-            relative_base_weight = elapsed_days * 0.04;
+
+        if rating_list.contains_key(gisa1) {
+            if match_name.contains("바둑리그") {
+                color_base_weight = elapsed_days * 0.006;
+                relative_base_weight = elapsed_days * 0.03;
+            } else {
+                color_base_weight = elapsed_days * 0.002;
+                relative_base_weight = elapsed_days * 0.01;
+            }
         } else {
-            color_base_weight = elapsed_days * 0.002;
-            relative_base_weight = elapsed_days * 0.04 / 3.0;
+            if match_name.contains("바둑리그") {
+                color_base_weight = elapsed_days * 0.006;
+                relative_base_weight = elapsed_days * 0.06;
+            } else {
+                color_base_weight = elapsed_days * 0.002;
+                relative_base_weight = elapsed_days * 0.02;
+            }
         }
 
         let gisa2 = if !winner_text.contains(gisa1) { match_result.get("winner_name").unwrap() } else { match_result.get("loser_name").unwrap() };

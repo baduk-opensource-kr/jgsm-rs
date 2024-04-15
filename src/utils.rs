@@ -214,8 +214,8 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                     player.set_elo_rating(baeteil_to_goratings(rating));
                 }
             }
-            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
-            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
+            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
             if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team2) {
                 player.set_white_weight(white_weight);
@@ -231,8 +231,8 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                     player.set_elo_rating(rating);
                 }
             }
-            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
-            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
+            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
             if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team2) {
                 player.set_white_weight(white_weight);
@@ -252,8 +252,8 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                     player.set_elo_rating(baeteil_to_goratings(rating));
                 }
             }
-            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
-            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
+            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
             if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team1) {
                 player.set_white_weight(white_weight);
@@ -269,8 +269,8 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                     player.set_elo_rating(rating);
                 }
             }
-            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
-            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()));
+            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
+            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
             if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), team1) {
                 player.set_white_weight(white_weight);

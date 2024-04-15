@@ -475,13 +475,13 @@ pub fn execute_kbleague_post() {
                                             best_black_match_result.third_blitz().player1_wins(), 
                                             best_black_match_result.third_blitz().player2_wins(), 
                                             best_black_match_result.third_blitz_black_win_probability());
-                                        println!("4국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                        println!("4국 백 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                             best_black_match_result.forth_blitz().player1().korean_name(), 
                                             best_black_match_result.forth_blitz().player2().korean_name(), 
                                             best_black_match_result.forth_blitz().player1_wins(), 
                                             best_black_match_result.forth_blitz().player2_wins(), 
                                             best_black_match_result.forth_blitz_white_win_probability());
-                                        println!("5국 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                        println!("5국 흑 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                             best_black_match_result.fifth_bullet().player1().korean_name(), 
                                             best_black_match_result.fifth_bullet().player2().korean_name(), 
                                             best_black_match_result.fifth_bullet().player1_wins(), 
@@ -508,13 +508,13 @@ pub fn execute_kbleague_post() {
                                             best_white_match_result.third_blitz().player1_wins(), 
                                             best_white_match_result.third_blitz().player2_wins(), 
                                             best_white_match_result.third_blitz_white_win_probability());
-                                        println!("4국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                        println!("4국 흑 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                             best_white_match_result.forth_blitz().player1().korean_name(), 
                                             best_white_match_result.forth_blitz().player2().korean_name(), 
                                             best_white_match_result.forth_blitz().player1_wins(), 
                                             best_white_match_result.forth_blitz().player2_wins(), 
                                             best_white_match_result.forth_blitz_black_win_probability());
-                                        println!("5국 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                        println!("5국 백 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                             best_white_match_result.fifth_bullet().player1().korean_name(), 
                                             best_white_match_result.fifth_bullet().player2().korean_name(), 
                                             best_white_match_result.fifth_bullet().player1_wins(), 
@@ -530,31 +530,31 @@ pub fn execute_kbleague_post() {
                         if let Some((best_black_lineup_key, _)) = best_black_lineup_key {
                             if let Some(best_match_result) = lineup_best_match_results.get(best_black_lineup_key) {
                                 println!("흑백흑백흑에서 최선의 오더일 경우 최악의 대진일 때");
-                                println!("1국 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                println!("1국 흑 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                     best_match_result.first_rapid().player1().korean_name(), 
                                     best_match_result.first_rapid().player2().korean_name(), 
                                     best_match_result.first_rapid().player1_wins(), 
                                     best_match_result.first_rapid().player2_wins(), 
                                     best_match_result.first_rapid_black_win_probability());
-                                println!("2국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                println!("2국 백 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                     best_match_result.second_blitz().player1().korean_name(), 
                                     best_match_result.second_blitz().player2().korean_name(), 
                                     best_match_result.second_blitz().player1_wins(), 
                                     best_match_result.second_blitz().player2_wins(), 
                                     best_match_result.second_blitz_white_win_probability());
-                                println!("3국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                println!("3국 흑 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                     best_match_result.third_blitz().player1().korean_name(), 
                                     best_match_result.third_blitz().player2().korean_name(), 
                                     best_match_result.third_blitz().player1_wins(), 
                                     best_match_result.third_blitz().player2_wins(), 
                                     best_match_result.third_blitz_black_win_probability());
-                                println!("4국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                println!("4국 백 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                     best_match_result.forth_blitz().player1().korean_name(), 
                                     best_match_result.forth_blitz().player2().korean_name(), 
                                     best_match_result.forth_blitz().player1_wins(), 
                                     best_match_result.forth_blitz().player2_wins(), 
                                     best_match_result.forth_blitz_white_win_probability());
-                                println!("5국 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                println!("5국 흑 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                     best_match_result.fifth_bullet().player1().korean_name(), 
                                     best_match_result.fifth_bullet().player2().korean_name(), 
                                     best_match_result.fifth_bullet().player1_wins(), 
@@ -567,31 +567,31 @@ pub fn execute_kbleague_post() {
                         if let Some((best_white_lineup_key, _)) = best_white_lineup_key {
                             if let Some(best_match_result) = lineup_best_match_results.get(best_white_lineup_key) {
                                 println!("백흑백흑백에서 최선의 오더일 경우 최악의 대진일 때");
-                                println!("1국 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                println!("1국 백 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                     best_match_result.first_rapid().player1().korean_name(), 
                                     best_match_result.first_rapid().player2().korean_name(), 
                                     best_match_result.first_rapid().player1_wins(), 
                                     best_match_result.first_rapid().player2_wins(), 
                                     best_match_result.first_rapid_white_win_probability());
-                                println!("2국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                println!("2국 흑 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                     best_match_result.second_blitz().player1().korean_name(), 
                                     best_match_result.second_blitz().player2().korean_name(), 
                                     best_match_result.second_blitz().player1_wins(), 
                                     best_match_result.second_blitz().player2_wins(), 
                                     best_match_result.second_blitz_black_win_probability());
-                                println!("3국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                println!("3국 백 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                     best_match_result.third_blitz().player1().korean_name(), 
                                     best_match_result.third_blitz().player2().korean_name(), 
                                     best_match_result.third_blitz().player1_wins(), 
                                     best_match_result.third_blitz().player2_wins(), 
                                     best_match_result.third_blitz_white_win_probability());
-                                println!("4국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                println!("4국 흑 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                     best_match_result.forth_blitz().player1().korean_name(), 
                                     best_match_result.forth_blitz().player2().korean_name(), 
                                     best_match_result.forth_blitz().player1_wins(), 
                                     best_match_result.forth_blitz().player2_wins(), 
                                     best_match_result.forth_blitz_black_win_probability());
-                                println!("5국 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                println!("5국 백 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                     best_match_result.fifth_bullet().player1().korean_name(), 
                                     best_match_result.fifth_bullet().player2().korean_name(), 
                                     best_match_result.fifth_bullet().player1_wins(), 

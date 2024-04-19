@@ -305,7 +305,7 @@ pub fn execute_kbleague_post() {
                 println!("4. {} 미니맥스 라인업(최선 + 상대 카운터픽)", selected_teams[0].team_name());
                 println!("5. {} 예상라인업에 대한 {} 카운터픽(미니맥스)(개발중)\n", selected_teams[1].team_name(), selected_teams[0].team_name());
 
-                println!("6. 양측최선 라인업 승리확률(개발중)");
+                println!("6. 양측최선 라인업 승리확률(내쉬균형)");
                 println!("7. 지정 라인업 승리확률(개발중)");
                 println!("8. 에이스 결정전 Excel로 출력(개발중)");
                 println!("9. 실시간 팀 승률(개발중)\n");
@@ -337,20 +337,12 @@ pub fn execute_kbleague_post() {
                         }
                     },
                     "4" => {
-                        let team1_filtered_lineups = utils::filter_team1_lineups_post(&selected_teams, &team1_all_lineups);
                         let mut random_lineup_min_win_probs: HashMap<String, (f64, f64)> = HashMap::new(); // 라인업 이름을 키로, (최소 백 승리 확률, 최소 흑 승리 확률)을 값으로 저장
                         let mut lineup_min_win_probs: HashMap<String, (f64, f64)> = HashMap::new(); // 라인업 이름을 키로, (최소 백 승리 확률, 최소 흑 승리 확률)을 값으로 저장
                         let mut lineup_random_min_win_probs: HashMap<String, f64> = HashMap::new(); // 라인업 이름을 키로, 승리 확률을 값으로 저장
                         let mut lineup_best_match_results: HashMap<String, &PostMatchResult> = HashMap::new();
                         let mut lineup_random_white_best_match_results: HashMap<String, &PostMatchResult> = HashMap::new();
                         let mut lineup_random_black_best_match_results: HashMap<String, &PostMatchResult> = HashMap::new();
-
-                        let progress_bar = ProgressBar::new(match_results_matrix.iter().flatten().count() as u64);
-                        progress_bar.set_style(ProgressStyle::default_bar()
-                            .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} ({eta})")
-                            .expect("템플릿 문자열이 유효하지 않습니다.")
-                            .progress_chars("#>-"));
-
 
                         for match_result in match_results_matrix.iter().flatten() {
                             let lineup_key = format!("{}{}{}{}{}", 
@@ -487,7 +479,7 @@ pub fn execute_kbleague_post() {
                                             best_black_match_result.fifth_bullet().player1_wins(), 
                                             best_black_match_result.fifth_bullet().player2_wins(), 
                                             best_black_match_result.fifth_bullet_black_win_probability());
-                                        println!("총 승리확률: {:.2}%\n", best_black_match_result.black_started_total_win_probability());
+                                        println!("총 승리확률: {:.2}%", best_black_match_result.black_started_total_win_probability());
 
                                         println!("최선의 오더 후 백흑백흑백인 경우 최악의 대진일 때");
                                         println!("1국 백 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
@@ -709,6 +701,402 @@ pub fn execute_kbleague_post() {
                         // io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                     },
                     "6" => {
+                        let mut team1_random_lineup_min_win_probs: HashMap<String, (f64, f64)> = HashMap::new(); // 라인업 이름을 키로, (최소 백 승리 확률, 최소 흑 승리 확률)을 값으로 저장
+                        let mut team1_lineup_min_win_probs: HashMap<String, (f64, f64)> = HashMap::new(); // 라인업 이름을 키로, (최소 백 승리 확률, 최소 흑 승리 확률)을 값으로 저장
+                        let mut team1_lineup_random_min_win_probs: HashMap<String, f64> = HashMap::new(); // 라인업 이름을 키로, 승리 확률을 값으로 저장
+                        let mut team1_lineup_best_match_results: HashMap<String, &PostMatchResult> = HashMap::new();
+                        let mut team1_lineup_random_white_best_match_results: HashMap<String, &PostMatchResult> = HashMap::new();
+                        let mut team1_lineup_random_black_best_match_results: HashMap<String, &PostMatchResult> = HashMap::new();
+                        let mut team2_random_lineup_min_win_probs: HashMap<String, (f64, f64)> = HashMap::new(); // 라인업 이름을 키로, (최소 백 승리 확률, 최소 흑 승리 확률)을 값으로 저장
+                        let mut team2_lineup_min_win_probs: HashMap<String, (f64, f64)> = HashMap::new(); // 라인업 이름을 키로, (최소 백 승리 확률, 최소 흑 승리 확률)을 값으로 저장
+                        let mut team2_lineup_random_min_win_probs: HashMap<String, f64> = HashMap::new(); // 라인업 이름을 키로, 승리 확률을 값으로 저장
+                        let mut team2_lineup_best_match_results: HashMap<String, &PostMatchResult> = HashMap::new();
+                        let mut team2_lineup_random_white_best_match_results: HashMap<String, &PostMatchResult> = HashMap::new();
+                        let mut team2_lineup_random_black_best_match_results: HashMap<String, &PostMatchResult> = HashMap::new();
+
+                        for match_result in match_results_matrix.iter().flatten() {
+                            let lineup_key = format!("{}{}{}{}{}", 
+                                match_result.first_rapid().player2().korean_name(),
+                                match_result.second_blitz().player2().korean_name(),
+                                match_result.third_blitz().player2().korean_name(),
+                                match_result.forth_blitz().player2().korean_name(),
+                                match_result.fifth_bullet().player2().korean_name()
+                            );
+
+                            let entry = team2_lineup_min_win_probs.entry(lineup_key.clone()).or_insert((std::f64::MIN, std::f64::MIN));
+                            let is_new_min_white = entry.1 < match_result.black_started_total_win_probability();
+                            let is_new_min_black = entry.0 < match_result.white_started_total_win_probability();
+                            entry.0 = entry.0.max(match_result.white_started_total_win_probability());
+                            entry.1 = entry.1.max(match_result.black_started_total_win_probability());
+
+                            // 새로운 최소값이 발견되면 해당 match_result를 저장
+                            if is_new_min_white || is_new_min_black {
+                                team2_lineup_best_match_results.insert(lineup_key, match_result);
+                            }
+                        }
+                        for match_result in match_results_matrix.iter().flatten() {
+                            let lineup_key = format!("{}{}{}{}{}", 
+                                match_result.first_rapid().player1().korean_name(),
+                                match_result.second_blitz().player1().korean_name(),
+                                match_result.third_blitz().player1().korean_name(),
+                                match_result.forth_blitz().player1().korean_name(),
+                                match_result.fifth_bullet().player1().korean_name()
+                            );
+
+                            let entry = team1_lineup_min_win_probs.entry(lineup_key.clone()).or_insert((std::f64::MAX, std::f64::MAX));
+                            let is_new_min_white = entry.0 > match_result.white_started_total_win_probability();
+                            let is_new_min_black = entry.1 > match_result.black_started_total_win_probability();
+                            entry.0 = entry.0.min(match_result.white_started_total_win_probability());
+                            entry.1 = entry.1.min(match_result.black_started_total_win_probability());
+
+                            // 새로운 최소값이 발견되면 해당 match_result를 저장
+                            if is_new_min_white || is_new_min_black {
+                                team1_lineup_best_match_results.insert(lineup_key, match_result);
+                            }
+                        }
+                        let mut team1_best_random_black_lineup_key_temp = &String::new();
+                        let mut team2_best_random_black_lineup_key_temp = &String::new();
+
+                        let (team2_best_white_lineup_key, team2_best_black_lineup_key, team2_best_random_white_lineup_key, team2_best_random_black_lineup_key) = team2_lineup_min_win_probs.iter().fold(
+                            (None, None, None, None),
+                            |(best_white, best_black, best_random_white, best_random_black), (key, &(white_prob, black_prob))| {
+                                let best_white = best_white
+                                    .map_or(Some((key, white_prob)), |(current_best_key, current_best_prob): (&String, f64)| {
+                                        if white_prob < current_best_prob {
+                                            Some((key, white_prob))
+                                        } else {
+                                            Some((current_best_key, current_best_prob))
+                                        }
+                                    });
+                                let best_black = best_black
+                                    .map_or(Some((key, black_prob)), |(current_best_key, current_best_prob): (&String, f64)| {
+                                        if black_prob < current_best_prob {
+                                            Some((key, black_prob))
+                                        } else {
+                                            Some((current_best_key, current_best_prob))
+                                        }
+                                    });
+                                let (best_white_random, best_black_random) = best_random_white
+                                    .map_or((Some((key, white_prob)), Some((key, black_prob))), |(current_best_key, current_best_prob): (&String, f64)| {
+                                        let white_key = key;
+                                        let team2_best_random_black_lineup_key = team2_lineup_min_win_probs.iter().fold(
+                                            None,
+                                            |best_random_black, (key, &(white_prob, black_prob))| {
+                                                let best_random_black = best_random_black
+                                                    .map_or(Some((key, black_prob)), |(random_black_current_best_key, random_black_current_best_prob): (&String, f64)| {
+                                                        let black_key = key;
+                                                        if let Some(best_white_match_result) = team2_lineup_best_match_results.get(white_key) {
+                                                            if let Some(best_black_match_result) = team2_lineup_best_match_results.get(black_key) {
+                                                                if best_white_match_result.first_rapid().player1().korean_name() == best_black_match_result.first_rapid().player1().korean_name() &&
+                                                                    best_white_match_result.second_blitz().player1().korean_name() == best_black_match_result.second_blitz().player1().korean_name() &&
+                                                                    best_white_match_result.third_blitz().player1().korean_name() == best_black_match_result.third_blitz().player1().korean_name() && 
+                                                                    black_prob < random_black_current_best_prob {
+                                                                    Some((black_key, black_prob))
+                                                                } else {
+                                                                    Some((random_black_current_best_key, random_black_current_best_prob))
+                                                                }
+                                                            } else {
+                                                                Some((random_black_current_best_key, random_black_current_best_prob))
+                                                            }
+                                                        } else {
+                                                            Some((random_black_current_best_key, random_black_current_best_prob))
+                                                        }
+                                                    });
+                                                best_random_black
+                                            },
+                                        );
+
+                                        if let Some((team2_best_random_black_lineup_key, best_black_prob)) = team2_best_random_black_lineup_key {
+                                            // 백과 흑의 최선의 대진을 업데이트
+                                            if ((best_black_prob + white_prob) / 2.0) < current_best_prob {
+                                                team2_best_random_black_lineup_key_temp = team2_best_random_black_lineup_key;
+                                                (Some((key, (best_black_prob + white_prob) / 2.0)), Some((team2_best_random_black_lineup_key, (best_black_prob + white_prob) / 2.0)))
+                                            } else {
+                                                (Some((current_best_key, current_best_prob)), Some((team2_best_random_black_lineup_key_temp, current_best_prob)))
+                                            }
+                                        } else {
+                                            (Some((current_best_key, current_best_prob)), Some((team2_best_random_black_lineup_key_temp, current_best_prob)))
+                                        }
+                                    });
+                                (best_white, best_black, best_white_random, best_black_random)
+                            },
+                        );
+                        let (team1_best_white_lineup_key, team1_best_black_lineup_key, team1_best_random_white_lineup_key, team1_best_random_black_lineup_key) = team1_lineup_min_win_probs.iter().fold(
+                            (None, None, None, None),
+                            |(best_white, best_black, best_random_white, best_random_black), (key, &(white_prob, black_prob))| {
+                                let best_white = best_white
+                                    .map_or(Some((key, white_prob)), |(current_best_key, current_best_prob): (&String, f64)| {
+                                        if white_prob > current_best_prob {
+                                            Some((key, white_prob))
+                                        } else {
+                                            Some((current_best_key, current_best_prob))
+                                        }
+                                    });
+                                let best_black = best_black
+                                    .map_or(Some((key, black_prob)), |(current_best_key, current_best_prob): (&String, f64)| {
+                                        if black_prob > current_best_prob {
+                                            Some((key, black_prob))
+                                        } else {
+                                            Some((current_best_key, current_best_prob))
+                                        }
+                                    });
+                                let (best_white_random, best_black_random) = best_random_white
+                                    .map_or((Some((key, white_prob)), Some((key, black_prob))), |(current_best_key, current_best_prob): (&String, f64)| {
+                                        let white_key = key;
+                                        let team1_best_random_black_lineup_key = team1_lineup_min_win_probs.iter().fold(
+                                            None,
+                                            |best_random_black, (key, &(white_prob, black_prob))| {
+                                                let best_random_black = best_random_black
+                                                    .map_or(Some((key, black_prob)), |(random_black_current_best_key, random_black_current_best_prob): (&String, f64)| {
+                                                        let black_key = key;
+                                                        if let Some(best_white_match_result) = team1_lineup_best_match_results.get(white_key) {
+                                                            if let Some(best_black_match_result) = team1_lineup_best_match_results.get(black_key) {
+                                                                if best_white_match_result.first_rapid().player1().korean_name() == best_black_match_result.first_rapid().player1().korean_name() &&
+                                                                    best_white_match_result.second_blitz().player1().korean_name() == best_black_match_result.second_blitz().player1().korean_name() &&
+                                                                    best_white_match_result.third_blitz().player1().korean_name() == best_black_match_result.third_blitz().player1().korean_name() && 
+                                                                    black_prob > random_black_current_best_prob {
+                                                                    Some((black_key, black_prob))
+                                                                } else {
+                                                                    Some((random_black_current_best_key, random_black_current_best_prob))
+                                                                }
+                                                            } else {
+                                                                Some((random_black_current_best_key, random_black_current_best_prob))
+                                                            }
+                                                        } else {
+                                                            Some((random_black_current_best_key, random_black_current_best_prob))
+                                                        }
+                                                    });
+                                                best_random_black
+                                            },
+                                        );
+
+                                        if let Some((team1_best_random_black_lineup_key, best_black_prob)) = team1_best_random_black_lineup_key {
+                                            // 백과 흑의 최선의 대진을 업데이트
+                                            if ((best_black_prob + white_prob) / 2.0) > current_best_prob {
+                                                team1_best_random_black_lineup_key_temp = team1_best_random_black_lineup_key;
+                                                (Some((key, (best_black_prob + white_prob) / 2.0)), Some((team1_best_random_black_lineup_key, (best_black_prob + white_prob) / 2.0)))
+                                            } else {
+                                                (Some((current_best_key, current_best_prob)), Some((team1_best_random_black_lineup_key_temp, current_best_prob)))
+                                            }
+                                        } else {
+                                            (Some((current_best_key, current_best_prob)), Some((team1_best_random_black_lineup_key_temp, current_best_prob)))
+                                        }
+                                    });
+                                (best_white, best_black, best_white_random, best_black_random)
+                            },
+                        );
+
+                        if let Some((team1_best_random_white_lineup_key, _)) = team1_best_random_white_lineup_key {
+                            if let Some(team1_best_white_match_result) = team1_lineup_best_match_results.get(team1_best_random_white_lineup_key) {
+                                if let Some((team1_best_random_black_lineup_key, avg_win_prob)) = team1_best_random_black_lineup_key {
+                                    if let Some(team1_best_black_match_result) = team1_lineup_best_match_results.get(team1_best_random_black_lineup_key) {
+                                        if let Some((team2_best_random_white_lineup_key, _)) = team2_best_random_white_lineup_key {
+                                            if let Some(team2_best_white_match_result) = team2_lineup_best_match_results.get(team2_best_random_white_lineup_key) {
+                                                if let Some((team2_best_random_black_lineup_key, avg_win_prob)) = team2_best_random_black_lineup_key {
+                                                    if let Some(team2_best_black_match_result) = team2_lineup_best_match_results.get(team2_best_random_black_lineup_key) {
+                                                        let black_matching_result = match_results_matrix.iter().flatten().find(|&match_result| {
+                                                            match_result.first_rapid().player1().korean_name() == team1_best_black_match_result.first_rapid().player1().korean_name() &&
+                                                            match_result.first_rapid().player2().korean_name() == team2_best_white_match_result.first_rapid().player2().korean_name() &&
+                                                            match_result.second_blitz().player1().korean_name() == team1_best_black_match_result.second_blitz().player1().korean_name() &&
+                                                            match_result.second_blitz().player2().korean_name() == team2_best_white_match_result.second_blitz().player2().korean_name() &&
+                                                            match_result.third_blitz().player1().korean_name() == team1_best_black_match_result.third_blitz().player1().korean_name() &&
+                                                            match_result.third_blitz().player2().korean_name() == team2_best_white_match_result.third_blitz().player2().korean_name() &&
+                                                            match_result.forth_blitz().player1().korean_name() == team1_best_black_match_result.forth_blitz().player1().korean_name() &&
+                                                            match_result.forth_blitz().player2().korean_name() == team2_best_white_match_result.forth_blitz().player2().korean_name() &&
+                                                            match_result.fifth_bullet().player1().korean_name() == team1_best_black_match_result.fifth_bullet().player1().korean_name() &&
+                                                            match_result.fifth_bullet().player2().korean_name() == team2_best_white_match_result.fifth_bullet().player2().korean_name()
+                                                        }).expect("매치 결과를 찾을 수 없습니다.");
+                                                        let white_matching_result = match_results_matrix.iter().flatten().find(|&match_result| {
+                                                            match_result.first_rapid().player1().korean_name() == team1_best_white_match_result.first_rapid().player1().korean_name() &&
+                                                            match_result.first_rapid().player2().korean_name() == team2_best_black_match_result.first_rapid().player2().korean_name() &&
+                                                            match_result.second_blitz().player1().korean_name() == team1_best_white_match_result.second_blitz().player1().korean_name() &&
+                                                            match_result.second_blitz().player2().korean_name() == team2_best_black_match_result.second_blitz().player2().korean_name() &&
+                                                            match_result.third_blitz().player1().korean_name() == team1_best_white_match_result.third_blitz().player1().korean_name() &&
+                                                            match_result.third_blitz().player2().korean_name() == team2_best_black_match_result.third_blitz().player2().korean_name() &&
+                                                            match_result.forth_blitz().player1().korean_name() == team1_best_white_match_result.forth_blitz().player1().korean_name() &&
+                                                            match_result.forth_blitz().player2().korean_name() == team2_best_black_match_result.forth_blitz().player2().korean_name() &&
+                                                            match_result.fifth_bullet().player1().korean_name() == team1_best_white_match_result.fifth_bullet().player1().korean_name() &&
+                                                            match_result.fifth_bullet().player2().korean_name() == team2_best_black_match_result.fifth_bullet().player2().korean_name()
+                                                        }).expect("매치 결과를 찾을 수 없습니다.");
+
+                                                        println!("흑백을 모르는 경우의 양측최선 오더(내쉬균형)");
+                                                        println!("1국 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: 흑:{:.2}%, 백:{:.2}%)",
+                                                            black_matching_result.first_rapid().player1().korean_name(),
+                                                            black_matching_result.first_rapid().player2().korean_name(),
+                                                            black_matching_result.first_rapid().player1_wins(), 
+                                                            black_matching_result.first_rapid().player2_wins(), 
+                                                            black_matching_result.first_rapid_black_win_probability(), 
+                                                            white_matching_result.first_rapid_white_win_probability(), 
+                                                        );
+                                                        println!("2국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: 흑:{:.2}%, 백:{:.2}%)",
+                                                            black_matching_result.second_blitz().player1().korean_name(),
+                                                            black_matching_result.second_blitz().player2().korean_name(),
+                                                            black_matching_result.second_blitz().player1_wins(), 
+                                                            black_matching_result.second_blitz().player2_wins(), 
+                                                            black_matching_result.second_blitz_white_win_probability(), 
+                                                            white_matching_result.second_blitz_black_win_probability(), 
+                                                        );
+                                                        println!("3국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: 흑:{:.2}%, 백:{:.2}%)",
+                                                            black_matching_result.third_blitz().player1().korean_name(),
+                                                            black_matching_result.third_blitz().player2().korean_name(),
+                                                            black_matching_result.third_blitz().player1_wins(), 
+                                                            black_matching_result.third_blitz().player2_wins(), 
+                                                            black_matching_result.third_blitz_black_win_probability(), 
+                                                            white_matching_result.third_blitz_white_win_probability(), 
+                                                        );
+                                                        println!("좌측팀 기준 흑백흑백흑");
+                                                        println!("4국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)",
+                                                            black_matching_result.forth_blitz().player1().korean_name(),
+                                                            black_matching_result.forth_blitz().player2().korean_name(),
+                                                            black_matching_result.forth_blitz().player1_wins(), 
+                                                            black_matching_result.forth_blitz().player2_wins(), 
+                                                            black_matching_result.forth_blitz_white_win_probability(), 
+                                                        );
+                                                        println!("5국 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)",
+                                                            black_matching_result.fifth_bullet().player1().korean_name(),
+                                                            black_matching_result.fifth_bullet().player2().korean_name(),
+                                                            black_matching_result.fifth_bullet().player1_wins(), 
+                                                            black_matching_result.fifth_bullet().player2_wins(), 
+                                                            black_matching_result.fifth_bullet_black_win_probability(), 
+                                                        );
+                                                        println!("좌측팀 기준 백흑백흑백");
+                                                        println!("4국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)",
+                                                            white_matching_result.forth_blitz().player1().korean_name(),
+                                                            white_matching_result.forth_blitz().player2().korean_name(),
+                                                            white_matching_result.forth_blitz().player1_wins(), 
+                                                            white_matching_result.forth_blitz().player2_wins(), 
+                                                            white_matching_result.forth_blitz_black_win_probability(), 
+                                                        );
+                                                        println!("5국 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)",
+                                                            white_matching_result.fifth_bullet().player1().korean_name(),
+                                                            white_matching_result.fifth_bullet().player2().korean_name(),
+                                                            white_matching_result.fifth_bullet().player1_wins(), 
+                                                            white_matching_result.fifth_bullet().player2_wins(), 
+                                                            white_matching_result.fifth_bullet_white_win_probability(), 
+                                                        );
+                                                        println!("내쉬균형 일 때 흑백흑백흑 총 승리확률: {:.2}%", black_matching_result.black_started_total_win_probability());
+                                                        println!("내쉬균형 일 때 백흑백흑백 총 승리확률: {:.2}%\n", white_matching_result.white_started_total_win_probability());
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        println!("흑백을 아는 경우");
+                        if let Some((team1_best_black_lineup_key, _)) = team1_best_black_lineup_key {
+                            if let Some(team1_best_match_result) = team1_lineup_best_match_results.get(team1_best_black_lineup_key) {
+                                if let Some((team2_best_black_lineup_key, _)) = team2_best_black_lineup_key {
+                                    if let Some(team2_best_match_result) = team2_lineup_best_match_results.get(team2_best_black_lineup_key) {
+                                        let black_matching_result = match_results_matrix.iter().flatten().find(|&match_result| {
+                                            match_result.first_rapid().player1().korean_name() == team1_best_match_result.first_rapid().player1().korean_name() &&
+                                            match_result.first_rapid().player2().korean_name() == team2_best_match_result.first_rapid().player2().korean_name() &&
+                                            match_result.second_blitz().player1().korean_name() == team1_best_match_result.second_blitz().player1().korean_name() &&
+                                            match_result.second_blitz().player2().korean_name() == team2_best_match_result.second_blitz().player2().korean_name() &&
+                                            match_result.third_blitz().player1().korean_name() == team1_best_match_result.third_blitz().player1().korean_name() &&
+                                            match_result.third_blitz().player2().korean_name() == team2_best_match_result.third_blitz().player2().korean_name() &&
+                                            match_result.forth_blitz().player1().korean_name() == team1_best_match_result.forth_blitz().player1().korean_name() &&
+                                            match_result.forth_blitz().player2().korean_name() == team2_best_match_result.forth_blitz().player2().korean_name() &&
+                                            match_result.fifth_bullet().player1().korean_name() == team1_best_match_result.fifth_bullet().player1().korean_name() &&
+                                            match_result.fifth_bullet().player2().korean_name() == team2_best_match_result.fifth_bullet().player2().korean_name()
+                                        }).expect("매치 결과를 찾을 수 없습니다.");
+
+                                        println!("흑백흑백흑에서 최선의 오더일 경우 최악의 대진일 때");
+                                        println!("1국 흑 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                            black_matching_result.first_rapid().player1().korean_name(), 
+                                            black_matching_result.first_rapid().player2().korean_name(), 
+                                            black_matching_result.first_rapid().player1_wins(), 
+                                            black_matching_result.first_rapid().player2_wins(), 
+                                            black_matching_result.first_rapid_black_win_probability());
+                                        println!("2국 백 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                            black_matching_result.second_blitz().player1().korean_name(), 
+                                            black_matching_result.second_blitz().player2().korean_name(), 
+                                            black_matching_result.second_blitz().player1_wins(), 
+                                            black_matching_result.second_blitz().player2_wins(), 
+                                            black_matching_result.second_blitz_white_win_probability());
+                                        println!("3국 흑 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                            black_matching_result.third_blitz().player1().korean_name(), 
+                                            black_matching_result.third_blitz().player2().korean_name(), 
+                                            black_matching_result.third_blitz().player1_wins(), 
+                                            black_matching_result.third_blitz().player2_wins(), 
+                                            black_matching_result.third_blitz_black_win_probability());
+                                        println!("4국 백 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                            black_matching_result.forth_blitz().player1().korean_name(), 
+                                            black_matching_result.forth_blitz().player2().korean_name(), 
+                                            black_matching_result.forth_blitz().player1_wins(), 
+                                            black_matching_result.forth_blitz().player2_wins(), 
+                                            black_matching_result.forth_blitz_white_win_probability());
+                                        println!("5국 흑 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                            black_matching_result.fifth_bullet().player1().korean_name(), 
+                                            black_matching_result.fifth_bullet().player2().korean_name(), 
+                                            black_matching_result.fifth_bullet().player1_wins(), 
+                                            black_matching_result.fifth_bullet().player2_wins(), 
+                                            black_matching_result.fifth_bullet_black_win_probability());
+                                        println!("총 승리확률: {:.2}%", black_matching_result.black_started_total_win_probability());
+                                    }
+                                }
+                            }
+                        }
+
+                        if let Some((team1_best_white_lineup_key, _)) = team1_best_white_lineup_key {
+                            if let Some(team1_best_match_result) = team1_lineup_best_match_results.get(team1_best_white_lineup_key) {
+                                if let Some((team2_best_white_lineup_key, _)) = team2_best_white_lineup_key {
+                                    if let Some(team2_best_match_result) = team2_lineup_best_match_results.get(team2_best_white_lineup_key) {
+                                        let white_matching_result = match_results_matrix.iter().flatten().find(|&match_result| {
+                                            match_result.first_rapid().player1().korean_name() == team1_best_match_result.first_rapid().player1().korean_name() &&
+                                            match_result.first_rapid().player2().korean_name() == team2_best_match_result.first_rapid().player2().korean_name() &&
+                                            match_result.second_blitz().player1().korean_name() == team1_best_match_result.second_blitz().player1().korean_name() &&
+                                            match_result.second_blitz().player2().korean_name() == team2_best_match_result.second_blitz().player2().korean_name() &&
+                                            match_result.third_blitz().player1().korean_name() == team1_best_match_result.third_blitz().player1().korean_name() &&
+                                            match_result.third_blitz().player2().korean_name() == team2_best_match_result.third_blitz().player2().korean_name() &&
+                                            match_result.forth_blitz().player1().korean_name() == team1_best_match_result.forth_blitz().player1().korean_name() &&
+                                            match_result.forth_blitz().player2().korean_name() == team2_best_match_result.forth_blitz().player2().korean_name() &&
+                                            match_result.fifth_bullet().player1().korean_name() == team1_best_match_result.fifth_bullet().player1().korean_name() &&
+                                            match_result.fifth_bullet().player2().korean_name() == team2_best_match_result.fifth_bullet().player2().korean_name()
+                                        }).expect("매치 결과를 찾을 수 없습니다.");
+
+                                        println!("백흑백흑백에서 최선의 오더일 경우 최악의 대진일 때");
+                                        println!("1국 백 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                            white_matching_result.first_rapid().player1().korean_name(), 
+                                            white_matching_result.first_rapid().player2().korean_name(), 
+                                            white_matching_result.first_rapid().player1_wins(), 
+                                            white_matching_result.first_rapid().player2_wins(), 
+                                            white_matching_result.first_rapid_white_win_probability());
+                                        println!("2국 흑 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                            white_matching_result.second_blitz().player1().korean_name(), 
+                                            white_matching_result.second_blitz().player2().korean_name(), 
+                                            white_matching_result.second_blitz().player1_wins(), 
+                                            white_matching_result.second_blitz().player2_wins(), 
+                                            white_matching_result.second_blitz_black_win_probability());
+                                        println!("3국 백 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                            white_matching_result.third_blitz().player1().korean_name(), 
+                                            white_matching_result.third_blitz().player2().korean_name(), 
+                                            white_matching_result.third_blitz().player1_wins(), 
+                                            white_matching_result.third_blitz().player2_wins(), 
+                                            white_matching_result.third_blitz_white_win_probability());
+                                        println!("4국 흑 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                            white_matching_result.forth_blitz().player1().korean_name(), 
+                                            white_matching_result.forth_blitz().player2().korean_name(), 
+                                            white_matching_result.forth_blitz().player1_wins(), 
+                                            white_matching_result.forth_blitz().player2_wins(), 
+                                            white_matching_result.forth_blitz_black_win_probability());
+                                        println!("5국 백 초속기(bullet): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
+                                            white_matching_result.fifth_bullet().player1().korean_name(), 
+                                            white_matching_result.fifth_bullet().player2().korean_name(), 
+                                            white_matching_result.fifth_bullet().player1_wins(), 
+                                            white_matching_result.fifth_bullet().player2_wins(), 
+                                            white_matching_result.fifth_bullet_white_win_probability());
+                                        println!("총 승리확률: {:.2}%\n", white_matching_result.white_started_total_win_probability());
+                                    }
+                                }
+                            }
+                        }
+
+                        println!("\n계속하려면 엔터를 누르세요.");
+                        let mut pause = String::new();
+                        io::stdin().read_line(&mut pause).expect("입력을 읽는 데 실패했습니다.");
                         // let mut team1_best_lineup: Option<&PostMatchResult> = None;
                         // let mut team2_best_lineup: Option<&PostMatchResult> = None;
                         // let mut highest_min_total_win_prob = 0.0;

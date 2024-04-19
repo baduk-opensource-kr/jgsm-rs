@@ -384,7 +384,7 @@ pub fn execute_kbleague() {
                 println!("7. {} 예상라인업에 대한 {} 카운터픽(최고평균)", selected_teams[1].team_name(), selected_teams[0].team_name());
                 println!("8. {} 예상라인업에 대한 {} 카운터픽(미니맥스)\n", selected_teams[1].team_name(), selected_teams[0].team_name());
 
-                println!("9. 양측최선 라인업 승리확률");
+                println!("9. 양측최선 라인업 승리확률(내쉬균형)");
                 println!("10. 지정 라인업 승리확률");
                 println!("11. 에이스 결정전 Excel로 출력");
                 println!("12. 실시간 팀 승률\n");

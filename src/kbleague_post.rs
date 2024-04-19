@@ -1003,7 +1003,7 @@ pub fn execute_kbleague_post() {
                                             match_result.fifth_bullet().player2().korean_name() == team2_best_match_result.fifth_bullet().player2().korean_name()
                                         }).expect("매치 결과를 찾을 수 없습니다.");
 
-                                        println!("흑백흑백흑에서 최선의 오더일 경우 최악의 대진일 때");
+                                        println!("흑백흑백흑에서 양측최선 오더(내쉬균형)");
                                         println!("1국 흑 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                             black_matching_result.first_rapid().player1().korean_name(), 
                                             black_matching_result.first_rapid().player2().korean_name(), 
@@ -1057,7 +1057,7 @@ pub fn execute_kbleague_post() {
                                             match_result.fifth_bullet().player2().korean_name() == team2_best_match_result.fifth_bullet().player2().korean_name()
                                         }).expect("매치 결과를 찾을 수 없습니다.");
 
-                                        println!("백흑백흑백에서 최선의 오더일 경우 최악의 대진일 때");
+                                        println!("백흑백흑백에서 양측최선 오더(내쉬균형)");
                                         println!("1국 백 장고(rapid): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: {:.2}%)", 
                                             white_matching_result.first_rapid().player1().korean_name(), 
                                             white_matching_result.first_rapid().player2().korean_name(), 

@@ -787,9 +787,9 @@ pub fn execute_kbleague_post() {
                                                         let black_key = key;
                                                         if let Some(best_white_match_result) = team2_lineup_best_match_results.get(white_key) {
                                                             if let Some(best_black_match_result) = team2_lineup_best_match_results.get(black_key) {
-                                                                if best_white_match_result.first_rapid().player1().korean_name() == best_black_match_result.first_rapid().player1().korean_name() &&
-                                                                    best_white_match_result.second_blitz().player1().korean_name() == best_black_match_result.second_blitz().player1().korean_name() &&
-                                                                    best_white_match_result.third_blitz().player1().korean_name() == best_black_match_result.third_blitz().player1().korean_name() && 
+                                                                if best_white_match_result.first_rapid().player2().korean_name() == best_black_match_result.first_rapid().player2().korean_name() &&
+                                                                    best_white_match_result.second_blitz().player2().korean_name() == best_black_match_result.second_blitz().player2().korean_name() &&
+                                                                    best_white_match_result.third_blitz().player2().korean_name() == best_black_match_result.third_blitz().player2().korean_name() && 
                                                                     black_prob < random_black_current_best_prob {
                                                                     Some((black_key, black_prob))
                                                                 } else {

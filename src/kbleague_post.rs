@@ -928,7 +928,7 @@ pub fn execute_kbleague_post() {
                                                             black_matching_result.first_rapid_black_win_probability(), 
                                                             white_matching_result.first_rapid_white_win_probability(), 
                                                         );
-                                                        println!("2국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: 흑:{:.2}%, 백:{:.2}%)",
+                                                        println!("2국 속기(blitz): {} vs {} (최근3년 상대전적: {}-{}) (승리확률: 백:{:.2}%, 흑:{:.2}%)",
                                                             black_matching_result.second_blitz().player1().korean_name(),
                                                             black_matching_result.second_blitz().player2().korean_name(),
                                                             black_matching_result.second_blitz().player1_wins(), 

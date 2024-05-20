@@ -886,6 +886,46 @@ impl PostMatchResult {
     pub fn black_started_total_win_probability(&self) -> f64 {
         self.black_started_total_win_probability
     }
+
+    pub fn set_first_rapid_white_win_probability(&mut self, first_rapid_white_win_probability: f64) {
+        self.first_rapid_white_win_probability = first_rapid_white_win_probability;
+    }
+
+    pub fn set_first_rapid_black_win_probability(&mut self, first_rapid_black_win_probability: f64) {
+        self.first_rapid_black_win_probability = first_rapid_black_win_probability;
+    }
+
+    pub fn set_second_blitz_white_win_probability(&mut self, second_blitz_white_win_probability: f64) {
+        self.second_blitz_white_win_probability = second_blitz_white_win_probability;
+    }
+
+    pub fn set_second_blitz_black_win_probability(&mut self, second_blitz_black_win_probability: f64) {
+        self.second_blitz_black_win_probability = second_blitz_black_win_probability;
+    }
+
+    pub fn set_third_blitz_white_win_probability(&mut self, third_blitz_white_win_probability: f64) {
+        self.third_blitz_white_win_probability = third_blitz_white_win_probability;
+    }
+
+    pub fn set_third_blitz_black_win_probability(&mut self, third_blitz_black_win_probability: f64) {
+        self.third_blitz_black_win_probability = third_blitz_black_win_probability;
+    }
+
+    pub fn set_forth_blitz_white_win_probability(&mut self, forth_blitz_white_win_probability: f64) {
+        self.forth_blitz_white_win_probability = forth_blitz_white_win_probability;
+    }
+
+    pub fn set_forth_blitz_black_win_probability(&mut self, forth_blitz_black_win_probability: f64) {
+        self.forth_blitz_black_win_probability = forth_blitz_black_win_probability;
+    }
+
+    pub fn set_fifth_bullet_white_win_probability(&mut self, fifth_bullet_white_win_probability: f64) {
+        self.fifth_bullet_white_win_probability = fifth_bullet_white_win_probability;
+    }
+
+    pub fn set_fifth_bullet_black_win_probability(&mut self, fifth_bullet_black_win_probability: f64) {
+        self.fifth_bullet_black_win_probability = fifth_bullet_black_win_probability;
+    }
 }
 
 #[derive(Clone)]
@@ -1024,5 +1064,237 @@ impl PostPlayerRelativity {
 
     pub fn fifth_bullet_black_win_probability(&self) -> f64 {
         self.fifth_bullet_black_win_probability
+    }
+}
+
+pub struct PostWPAResult {
+    first_rapid_white_player1_wpa: f64,
+    first_rapid_black_player1_wpa: f64,
+    first_rapid_black_player2_wpa: f64,
+    first_rapid_white_player2_wpa: f64,
+    second_blitz_black_player1_wpa: f64,
+    second_blitz_white_player1_wpa: f64,
+    second_blitz_white_player2_wpa: f64,
+    second_blitz_black_player2_wpa: f64,
+    third_blitz_white_player1_wpa: f64,
+    third_blitz_black_player1_wpa: f64,
+    third_blitz_black_player2_wpa: f64,
+    third_blitz_white_player2_wpa: f64,
+    forth_blitz_black_player1_wpa: f64,
+    forth_blitz_white_player1_wpa: f64,
+    forth_blitz_white_player2_wpa: f64,
+    forth_blitz_black_player2_wpa: f64,
+    fifth_bullet_white_player1_wpa: f64,
+    fifth_bullet_black_player1_wpa: f64,
+    fifth_bullet_black_player2_wpa: f64,
+    fifth_bullet_white_player2_wpa: f64,
+}
+
+impl PostWPAResult {
+    pub fn new(
+        first_rapid_white_player1_wpa: f64,
+        first_rapid_black_player1_wpa: f64,
+        first_rapid_black_player2_wpa: f64,
+        first_rapid_white_player2_wpa: f64,
+        second_blitz_black_player1_wpa: f64,
+        second_blitz_white_player1_wpa: f64,
+        second_blitz_white_player2_wpa: f64,
+        second_blitz_black_player2_wpa: f64,
+        third_blitz_white_player1_wpa: f64,
+        third_blitz_black_player1_wpa: f64,
+        third_blitz_black_player2_wpa: f64,
+        third_blitz_white_player2_wpa: f64,
+        forth_blitz_black_player1_wpa: f64,
+        forth_blitz_white_player1_wpa: f64,
+        forth_blitz_white_player2_wpa: f64,
+        forth_blitz_black_player2_wpa: f64,
+        fifth_bullet_white_player1_wpa: f64,
+        fifth_bullet_black_player1_wpa: f64,
+        fifth_bullet_black_player2_wpa: f64,
+        fifth_bullet_white_player2_wpa: f64
+    ) -> Self {
+        Self {
+            first_rapid_white_player1_wpa,
+            first_rapid_black_player1_wpa,
+            first_rapid_black_player2_wpa,
+            first_rapid_white_player2_wpa,
+            second_blitz_black_player1_wpa,
+            second_blitz_white_player1_wpa,
+            second_blitz_white_player2_wpa,
+            second_blitz_black_player2_wpa,
+            third_blitz_white_player1_wpa,
+            third_blitz_black_player1_wpa,
+            third_blitz_black_player2_wpa,
+            third_blitz_white_player2_wpa,
+            forth_blitz_black_player1_wpa,
+            forth_blitz_white_player1_wpa,
+            forth_blitz_white_player2_wpa,
+            forth_blitz_black_player2_wpa,
+            fifth_bullet_white_player1_wpa,
+            fifth_bullet_black_player1_wpa,
+            fifth_bullet_black_player2_wpa,
+            fifth_bullet_white_player2_wpa,
+        }
+    }
+
+    pub fn first_rapid_white_player1_wpa(&self) -> f64 {
+        self.first_rapid_white_player1_wpa
+    }
+
+    pub fn first_rapid_black_player1_wpa(&self) -> f64 {
+        self.first_rapid_black_player1_wpa
+    }
+
+    pub fn first_rapid_black_player2_wpa(&self) -> f64 {
+        self.first_rapid_black_player2_wpa
+    }
+
+    pub fn first_rapid_white_player2_wpa(&self) -> f64 {
+        self.first_rapid_white_player2_wpa
+    }
+
+    pub fn second_blitz_black_player1_wpa(&self) -> f64 {
+        self.second_blitz_black_player1_wpa
+    }
+
+    pub fn second_blitz_white_player1_wpa(&self) -> f64 {
+        self.second_blitz_white_player1_wpa
+    }
+
+    pub fn second_blitz_white_player2_wpa(&self) -> f64 {
+        self.second_blitz_white_player2_wpa
+    }
+
+    pub fn second_blitz_black_player2_wpa(&self) -> f64 {
+        self.second_blitz_black_player2_wpa
+    }
+
+    pub fn third_blitz_white_player1_wpa(&self) -> f64 {
+        self.third_blitz_white_player1_wpa
+    }
+
+    pub fn third_blitz_black_player1_wpa(&self) -> f64 {
+        self.third_blitz_black_player1_wpa
+    }
+
+    pub fn third_blitz_black_player2_wpa(&self) -> f64 {
+        self.third_blitz_black_player2_wpa
+    }
+
+    pub fn third_blitz_white_player2_wpa(&self) -> f64 {
+        self.third_blitz_white_player2_wpa
+    }
+
+    pub fn forth_blitz_black_player1_wpa(&self) -> f64 {
+        self.forth_blitz_black_player1_wpa
+    }
+
+    pub fn forth_blitz_white_player1_wpa(&self) -> f64 {
+        self.forth_blitz_white_player1_wpa
+    }
+
+    pub fn forth_blitz_white_player2_wpa(&self) -> f64 {
+        self.forth_blitz_white_player2_wpa
+    }
+
+    pub fn forth_blitz_black_player2_wpa(&self) -> f64 {
+        self.forth_blitz_black_player2_wpa
+    }
+
+    pub fn fifth_bullet_white_player1_wpa(&self) -> f64 {
+        self.fifth_bullet_white_player1_wpa
+    }
+
+    pub fn fifth_bullet_black_player1_wpa(&self) -> f64 {
+        self.fifth_bullet_black_player1_wpa
+    }
+
+    pub fn fifth_bullet_black_player2_wpa(&self) -> f64 {
+        self.fifth_bullet_black_player2_wpa
+    }
+
+    pub fn fifth_bullet_white_player2_wpa(&self) -> f64 {
+        self.fifth_bullet_white_player2_wpa
+    }
+}
+
+pub struct PostRAXResult {
+    first_rapid_white_rax: f64,
+    first_rapid_black_rax: f64,
+    second_blitz_black_rax: f64,
+    second_blitz_white_rax: f64,
+    third_blitz_white_rax: f64,
+    third_blitz_black_rax: f64,
+    forth_blitz_black_rax: f64,
+    forth_blitz_white_rax: f64,
+    fifth_bullet_white_rax: f64,
+    fifth_bullet_black_rax: f64
+}
+
+impl PostRAXResult {
+    pub fn new(
+        first_rapid_white_rax: f64,
+        first_rapid_black_rax: f64,
+        second_blitz_black_rax: f64,
+        second_blitz_white_rax: f64,
+        third_blitz_white_rax: f64,
+        third_blitz_black_rax: f64,
+        forth_blitz_black_rax: f64,
+        forth_blitz_white_rax: f64,
+        fifth_bullet_white_rax: f64,
+        fifth_bullet_black_rax: f64
+    ) -> Self {
+        Self {
+            first_rapid_white_rax,
+            first_rapid_black_rax,
+            second_blitz_black_rax,
+            second_blitz_white_rax,
+            third_blitz_white_rax,
+            third_blitz_black_rax,
+            forth_blitz_black_rax,
+            forth_blitz_white_rax,
+            fifth_bullet_white_rax,
+            fifth_bullet_black_rax
+        }
+    }
+
+    pub fn first_rapid_white_rax(&self) -> f64 {
+        self.first_rapid_white_rax
+    }
+
+    pub fn first_rapid_black_rax(&self) -> f64 {
+        self.first_rapid_black_rax
+    }
+
+    pub fn second_blitz_black_rax(&self) -> f64 {
+        self.second_blitz_black_rax
+    }
+
+    pub fn second_blitz_white_rax(&self) -> f64 {
+        self.second_blitz_white_rax
+    }
+
+    pub fn third_blitz_white_rax(&self) -> f64 {
+        self.third_blitz_white_rax
+    }
+
+    pub fn third_blitz_black_rax(&self) -> f64 {
+        self.third_blitz_black_rax
+    }
+
+    pub fn forth_blitz_black_rax(&self) -> f64 {
+        self.forth_blitz_black_rax
+    }
+
+    pub fn forth_blitz_white_rax(&self) -> f64 {
+        self.forth_blitz_white_rax
+    }
+
+    pub fn fifth_bullet_white_rax(&self) -> f64 {
+        self.fifth_bullet_white_rax
+    }
+
+    pub fn fifth_bullet_black_rax(&self) -> f64 {
+        self.fifth_bullet_black_rax
     }
 }

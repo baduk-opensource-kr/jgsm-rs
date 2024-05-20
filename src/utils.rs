@@ -1,4 +1,4 @@
-use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team, TeamRelativity, TiebreakerRelativity, WPAResult, PostPlayerRelativity, PostMatchResult, PostLineup};
+use crate::models::{Lineup, MatchResult, Player, PlayerRelativity, Team, TeamRelativity, TiebreakerRelativity, WPAResult, PostWPAResult, PostPlayerRelativity, PostMatchResult, PostLineup, PostRAXResult};
 use crossterm::{
     execute,
     terminal::{Clear, ClearType},
@@ -27,25 +27,6 @@ pub fn calculate_win_probability(player1_elo: f64, player2_elo: f64) -> f64 {
     let probability = 1.0 / (1.0 + 10.0_f64.powf(elo_diff / 400.0));
     probability
 }
-
-// pub fn calculate_win_probability_with_relative_record(player1_elo: f64, player2_elo: f64, player1_wins: u32, player2_wins: u32) -> f64 {
-//     let base_probability = calculate_win_probability(player1_elo, player2_elo);
-//     let total_games = player1_wins + player2_wins;
-//     let win_rate_difference = if total_games > 0 {
-//         player1_wins as f64 / total_games as f64
-//     } else {
-//         0.5
-//     };
-
-//     interpolate(win_rate_difference, ((standard_error(base_probability, total_games as f64) * 2.0) + 1.0) / 2.0, base_probability)
-// }
-
-// fn standard_error(base_probability: f64, total_games: f64) -> f64 {
-//     if total_games <= 0.0 {
-//         return 0.5;
-//     }
-//     (base_probability * (1.0 - base_probability) / total_games).sqrt()
-// }
 
 fn interpolate(relative_probability: f64, standard_error: f64, base_probability: f64) -> f64 {
     if standard_error <= 0.0 {
@@ -214,13 +195,17 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                     player.set_elo_rating(baeteil_to_goratings(rating));
                 }
             }
-            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
-            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
-            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team2) {
+            if let Ok((white_weight, black_weight, relative_weight_list, live_weight, blitz_weight, kb_weight)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team2) {
                 player.set_white_weight(white_weight);
                 player.set_black_weight(black_weight);
                 player.set_relative_weight(relative_weight_list);
+
+                player.set_rapid_weight((live_weight + blitz_weight) / 2.0);
+                player.set_blitz_weight(blitz_weight + ((blitz_weight - ((live_weight + blitz_weight) / 2.0)) / 2.0));
+                player.set_bullet_weight(blitz_weight + (blitz_weight - ((live_weight + blitz_weight) / 2.0)));
+
+                println!("{}: {:.2}, {:.2}, {:.2}", player.korean_name(), player.elo_rating(), kb_weight, goratings_to_baeteil(player.elo_rating() + kb_weight));
             }
         } else if let Some(&rating) = player_ratings_on_goratings.get(player.english_name()) {
             match get_recent_record(player.korean_name(), rating, &player_ratings_on_baeteil, ranking_month.clone()) {
@@ -231,13 +216,17 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                     player.set_elo_rating(rating);
                 }
             }
-            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
-            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
-            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team2) {
+            if let Ok((white_weight, black_weight, relative_weight_list, live_weight, blitz_weight, kb_weight)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team2) {
                 player.set_white_weight(white_weight);
                 player.set_black_weight(black_weight);
                 player.set_relative_weight(relative_weight_list);
+
+                player.set_rapid_weight((live_weight + blitz_weight) / 2.0);
+                player.set_blitz_weight(blitz_weight);
+                player.set_bullet_weight(blitz_weight + ((blitz_weight - ((live_weight + blitz_weight) / 2.0)) / 2.0));
+
+                println!("{}: {:.2}, {:.2}, {:.2}", player.korean_name(), player.elo_rating(), kb_weight, goratings_to_baeteil(player.elo_rating() + kb_weight));
             }
         }
     }
@@ -252,13 +241,17 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                     player.set_elo_rating(baeteil_to_goratings(rating));
                 }
             }
-            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
-            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
-            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team1) {
+            if let Ok((white_weight, black_weight, relative_weight_list, live_weight, blitz_weight, kb_weight)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team1) {
                 player.set_white_weight(white_weight);
                 player.set_black_weight(black_weight);
                 player.set_relative_weight(relative_weight_list);
+
+                player.set_rapid_weight((live_weight + blitz_weight) / 2.0);
+                player.set_blitz_weight(blitz_weight);
+                player.set_bullet_weight(blitz_weight + ((blitz_weight - ((live_weight + blitz_weight) / 2.0)) / 2.0));
+
+                println!("{}: {:.2}, {:.2}, {:.2}", player.korean_name(), player.elo_rating(), kb_weight, goratings_to_baeteil(player.elo_rating() + kb_weight));
             }
         } else if let Some(&rating) = player_ratings_on_goratings.get(player.english_name()) {
             match get_recent_record(player.korean_name(), rating, &player_ratings_on_baeteil, ranking_month.clone()) {
@@ -269,13 +262,17 @@ pub fn update_team_elo_ratings(selected_teams: &mut Vec<Team>) -> Result<(), Box
                     player.set_elo_rating(rating);
                 }
             }
-            player.set_blitz_weight(speed_aging_curve(player.get_days_since_birth()) / 4.0);
-            player.set_bullet_weight(speed_aging_curve(player.get_days_since_birth()) / 2.0);
 
-            if let Ok((white_weight, black_weight, relative_weight_list)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team1) {
+            if let Ok((white_weight, black_weight, relative_weight_list, live_weight, blitz_weight, kb_weight)) = get_relative_and_color_weight(player.korean_name(), player.english_name(), team1) {
                 player.set_white_weight(white_weight);
                 player.set_black_weight(black_weight);
                 player.set_relative_weight(relative_weight_list);
+
+                player.set_rapid_weight((live_weight + blitz_weight) / 2.0);
+                player.set_blitz_weight(blitz_weight);
+                player.set_bullet_weight(blitz_weight + ((blitz_weight - ((live_weight + blitz_weight) / 2.0)) / 2.0));
+
+                println!("{}: {:.2}, {:.2}, {:.2}", player.korean_name(), player.elo_rating(), kb_weight, goratings_to_baeteil(player.elo_rating() + kb_weight));
             }
         }
     }
@@ -296,6 +293,18 @@ fn baeteil_to_goratings(x: f64) -> f64 {
     }
 }
 
+fn goratings_to_baeteil(y: f64) -> f64 {
+    if y < 3200.0 {
+        y + 6050.0
+    } else {
+        let a = 740.332659;
+        let b = 0.0946919155;
+        let c = 8456.81141;
+
+        (y / a).exp() / b + c
+    }
+}
+
 pub fn generate_player_relativities(selected_teams: &Vec<Team>, first_rapid_black: bool, first_rapid_none_color: bool) -> Result<Vec<PlayerRelativity>, String> {
     let mut all_relative_records: Vec<PlayerRelativity> = Vec::new();
 
@@ -311,8 +320,8 @@ pub fn generate_player_relativities(selected_teams: &Vec<Team>, first_rapid_blac
             if first_rapid_none_color {
                 if first_rapid_black {
                     let first_rapid_win_probability = calculate_win_probability(
-                        (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
-                        (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                        (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + (player1.black_weight() / 2.0) + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + (player2.white_weight() / 2.0) + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
                     );
                     let second_blitz_win_probability = calculate_win_probability(
                         (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
@@ -327,8 +336,8 @@ pub fn generate_player_relativities(selected_teams: &Vec<Team>, first_rapid_blac
                         (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
                     );
                     let fifth_bullet_win_probability = calculate_win_probability(
-                        (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
-                        (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                        (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + (player1.black_weight() * 1.5) + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + (player2.white_weight() * 1.5) + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
                     );
 
                     all_relative_records.push(PlayerRelativity::new(
@@ -344,8 +353,8 @@ pub fn generate_player_relativities(selected_teams: &Vec<Team>, first_rapid_blac
                     ));
                 } else {
                     let first_rapid_win_probability = calculate_win_probability(
-                        (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
-                        (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                        (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + (player1.white_weight() / 2.0) + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + (player2.black_weight() / 2.0) + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
                     );
                     let second_blitz_win_probability = calculate_win_probability(
                         (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
@@ -360,8 +369,8 @@ pub fn generate_player_relativities(selected_teams: &Vec<Team>, first_rapid_blac
                         (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
                     );
                     let fifth_bullet_win_probability = calculate_win_probability(
-                        (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
-                        (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                        (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + (player1.white_weight() * 1.5) + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                        (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + (player2.black_weight() * 1.5) + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
                     );
 
                     all_relative_records.push(PlayerRelativity::new(
@@ -1483,16 +1492,6 @@ pub async fn live_win_ratings(match_result: MatchResult, player_relativities: Ve
     c.close().await.expect("WebDriver를 닫는 데 실패했습니다.");
 }
 
-fn speed_aging_curve(days_since_birth: f64) -> f64 {
-    let k1: f64 = 81.04;
-    let k2: f64 = -0.00224;
-    let k3: f64 = 10775.89;
-    let k4: f64 = 0.00314;
-    let k5: f64 = -81.51;
-
-    k1 / (1.0 + E.powf(-k2 * (days_since_birth - k3))) + k4 * days_since_birth + k5
-}
-
 pub fn get_recent_record(gisa1: &str, mut gisa1_rating: f64, rating_list: &HashMap<String, f64>, ranking_month: String) -> Result<f64, Box<dyn Error>> {
     let current_month = format!("-{:02}-", chrono::Utc::now().month());
     let current_ranking_month = format!("-{:02}-", ranking_month.parse::<u32>().unwrap());
@@ -1720,7 +1719,7 @@ fn redistribute_scores(a: f64, b: f64, c: f64, d: f64) -> (f64, f64, f64, f64) {
     (redistributed_scores[0], redistributed_scores[1], redistributed_scores[2], redistributed_scores[3])
 }
 
-pub fn get_relative_and_color_weight(gisa1: &str, gisa1_eng: &str, other_team: &Team) -> Result<(f64, f64, HashMap<String, f64>), Box<dyn Error>> {
+pub fn get_relative_and_color_weight(gisa1: &str, gisa1_eng: &str, other_team: &Team) -> Result<(f64, f64, HashMap<String, f64>, f64, f64, f64), Box<dyn Error>> {
     let other_team_players = other_team.players().clone();
 
     let current_date = chrono::Utc::now();
@@ -1801,11 +1800,25 @@ pub fn get_relative_and_color_weight(gisa1: &str, gisa1_eng: &str, other_team: &
     let mut rating_list = HashMap::new();
     let mut relative_rating_list = other_team_players.iter().map(|player| (player.korean_name().clone(), 0.0)).collect::<HashMap<String, _>>();
     let mut base_rating = 0.0;
+    let mut white_base_rating = 0.0;
+    let mut black_base_rating = 0.0;
+    let mut live_base_rating = 0.0;
+    let mut blitz_base_rating = 0.0;
     let mut white_rating = 0.0;
     let mut black_rating = 0.0;
+    let mut speed_white_rating = 0.0;
+    let mut speed_black_rating = 0.0;
+    let mut live_rating = 0.0;
+    let mut blitz_rating = 0.0;
+    let mut kb_rating = 0.0;
     let mut relative_weight_list = other_team_players.iter().map(|player| (player.korean_name().clone(), 0.0)).collect::<HashMap<String, _>>();
     let mut white_weight = 0.0;
     let mut black_weight = 0.0;
+    let mut speed_white_weight = 0.0;
+    let mut speed_black_weight = 0.0;
+    let mut live_weight = 0.0;
+    let mut blitz_weight = 0.0;
+    let mut kb_weight = 0.0;
 
     for match_result in matches_to_process.iter().rev() {
         let winner_text = match_result.get("winner_name").unwrap().clone();
@@ -1820,36 +1833,55 @@ pub fn get_relative_and_color_weight(gisa1: &str, gisa1_eng: &str, other_team: &
             for (player, rating) in &relative_rating_list {
                 *relative_weight_list.entry(player.clone()).or_insert(0.0) += *rating;
             }
-            let average_rating = (white_rating + black_rating) / 2.0;
-            white_weight += white_rating - average_rating;
-            black_weight += black_rating - average_rating;
+            kb_weight += kb_rating - base_rating;
 
+            live_weight += live_rating - live_base_rating;
+            blitz_weight += blitz_rating - blitz_base_rating;
+
+            white_weight += white_rating - white_base_rating;
+            black_weight += black_rating - black_base_rating;
             relative_rating_list = other_team_players.iter().map(|player| (player.korean_name().clone(), 0.0)).collect::<HashMap<String, _>>();
+
             base_rating = new_white_rating.clone();
-            white_rating = new_white_rating;
-            black_rating = new_black_rating;
+            white_base_rating = new_white_rating.clone() + white_weight;
+            black_base_rating = new_black_rating.clone() + black_weight;
+            live_base_rating = new_white_rating.clone() + live_weight;
+            blitz_base_rating = new_white_rating.clone() + blitz_weight;
+            speed_white_rating = new_white_rating.clone();
+            speed_black_rating = new_black_rating.clone();
+            kb_rating = new_black_rating.clone();
+            live_rating = new_black_rating.clone() + live_weight;
+            blitz_rating = new_black_rating.clone() + blitz_weight;
+            white_rating = new_white_rating + white_weight;
+            black_rating = new_black_rating + black_weight;
             last_month = match_month;
         }
 
         let elapsed_days = match_date.signed_duration_since(three_years_ago_date).num_days() as f64;
         let mut color_base_weight = elapsed_days * 0.003;
+        let mut speed_base_weight = elapsed_days * 0.0035;
         let mut relative_base_weight = elapsed_days * 0.02;
+        let mut speed_color_base_weight = elapsed_days * 0.003;
 
         if rating_list.contains_key(gisa1) {
             if match_name.contains("바둑리그") {
-                color_base_weight = elapsed_days * 0.006;
-                relative_base_weight = elapsed_days * 0.03;
+                color_base_weight = elapsed_days * 0.004;
+                relative_base_weight = elapsed_days * 0.025;
+                speed_color_base_weight = elapsed_days * 0.002;
             } else {
                 color_base_weight = elapsed_days * 0.002;
-                relative_base_weight = elapsed_days * 0.01;
+                relative_base_weight = elapsed_days * 0.015;
+                speed_color_base_weight = elapsed_days * 0.004;
             }
         } else {
             if match_name.contains("바둑리그") {
-                color_base_weight = elapsed_days * 0.006;
-                relative_base_weight = elapsed_days * 0.06;
+                color_base_weight = elapsed_days * 0.004;
+                relative_base_weight = elapsed_days * 0.05;
+                speed_color_base_weight = elapsed_days * 0.002;
             } else {
                 color_base_weight = elapsed_days * 0.002;
-                relative_base_weight = elapsed_days * 0.02;
+                relative_base_weight = elapsed_days * 0.03;
+                speed_color_base_weight = elapsed_days * 0.004;
             }
         }
 
@@ -1878,18 +1910,49 @@ pub fn get_relative_and_color_weight(gisa1: &str, gisa1_eng: &str, other_team: &
                 !match_name.contains("란커") &&
                 !match_name.contains("황룡사")
             {
+                if (match_name.contains("2023-2024 KB국민은행 바둑리그")) {
+                    let win_probability = calculate_win_probability(kb_rating, baeteil_to_goratings(*gisa2_rating));
+                    kb_rating += 8.0 * (is_win - win_probability);
+                }
                 if (match_result.get("winner_color").unwrap().contains("백") && is_win == 1.0) || (match_result.get("winner_color").unwrap().contains("흑") && is_win == 0.0) {
                     let win_probability = calculate_win_probability(white_rating, baeteil_to_goratings(*gisa2_rating));
                     white_rating += color_base_weight * (is_win - win_probability);
+                    speed_white_rating += speed_color_base_weight * (is_win - win_probability);
                 } else if (match_result.get("winner_color").unwrap().contains("흑") && is_win == 1.0) || (match_result.get("winner_color").unwrap().contains("백") && is_win == 0.0) {
                     let win_probability = calculate_win_probability(black_rating, baeteil_to_goratings(*gisa2_rating));
                     black_rating += color_base_weight * (is_win - win_probability);
+                    speed_black_rating += speed_color_base_weight * (is_win - win_probability);
+                }
+                if (!match_name.contains("KB국민은행 바둑리그")) {
+                    if (match_name.contains("프로기사협회") ||
+                        match_name.contains("퓨처스") ||
+                        match_name.contains("크라운해태") ||
+                        match_name.contains("용성전") ||
+                        match_name.contains("하찬석국수") ||
+                        match_name.contains("MZ") ||
+                        match_name.contains("백암") ||
+                        match_name.contains("국토정중앙") ||
+                        match_name.contains("루키바둑") ||
+                        match_name.contains("유소년 신예최강") ||
+                        match_name.contains("유소년신예최강") ||
+                        match_name.contains("김인국수") ||
+                        match_name.contains("이붕") ||
+                        match_name.contains("KBS") || 
+                        match_name.contains("대통령") ||
+                        match_name.contains("난설헌")
+                    ) {
+                        let win_probability = calculate_win_probability(blitz_rating, baeteil_to_goratings(*gisa2_rating));
+                        blitz_rating += speed_base_weight * (is_win - win_probability);
+                    } else {
+                        let win_probability = calculate_win_probability(live_rating, baeteil_to_goratings(*gisa2_rating));
+                        live_rating += speed_base_weight * (is_win - win_probability);
+                    }
                 }
             }
         }
     }
 
-    Ok((white_weight, black_weight, relative_weight_list))
+    Ok((white_weight, black_weight, relative_weight_list, live_weight, blitz_weight, kb_weight))
 }
 
 pub fn get_color_rating(korean_name: &str, english_name: &str, year: &str, month: &str) -> Result<(HashMap<String, f64>, f64, f64), Box<dyn Error>> {
@@ -1923,8 +1986,8 @@ pub fn generate_player_relativities_post(selected_teams: &Vec<Team>) -> Result<V
             let player2_wins = *record.get(player2.korean_name()).unwrap_or(&0);
 
             let first_rapid_white_win_probability = calculate_win_probability(
-                (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
-                (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + (player1.white_weight() / 2.0) + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + (player2.black_weight() / 2.0) + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
             );
             let second_blitz_white_win_probability = calculate_win_probability(
                 (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
@@ -1939,12 +2002,12 @@ pub fn generate_player_relativities_post(selected_teams: &Vec<Team>) -> Result<V
                 (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
             );
             let fifth_bullet_white_win_probability = calculate_win_probability(
-                (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + player1.white_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
-                (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + player2.black_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + (player1.white_weight() * 1.5) + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + (player2.black_weight() * 1.5) + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
             );
             let first_rapid_black_win_probability = calculate_win_probability(
-                (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
-                (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                (player1.elo_rating() + player1.condition_weight() + player1.rapid_weight() + (player1.black_weight() / 2.0) + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                (player2.elo_rating() + player2.condition_weight() + player2.rapid_weight() + (player2.white_weight() / 2.0) + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
             );
             let second_blitz_black_win_probability = calculate_win_probability(
                 (player1.elo_rating() + player1.condition_weight() + player1.blitz_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
@@ -1959,8 +2022,8 @@ pub fn generate_player_relativities_post(selected_teams: &Vec<Team>) -> Result<V
                 (player2.elo_rating() + player2.condition_weight() + player2.blitz_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
             );
             let fifth_bullet_black_win_probability = calculate_win_probability(
-                (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + player1.black_weight() + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
-                (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + player2.white_weight() + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
+                (player1.elo_rating() + player1.condition_weight() + player1.bullet_weight() + (player1.black_weight() * 1.5) + *player1.relative_weight().get(player2.korean_name().as_str()).unwrap_or(&0.0)) as f64,
+                (player2.elo_rating() + player2.condition_weight() + player2.bullet_weight() + (player2.white_weight() * 1.5) + *player2.relative_weight().get(player1.korean_name().as_str()).unwrap_or(&0.0)) as f64
             );
 
             all_relative_records.push(PostPlayerRelativity::new(
@@ -1988,11 +2051,6 @@ pub fn generate_player_relativities_post(selected_teams: &Vec<Team>) -> Result<V
 pub fn calculate_match_result_post(team1_lineup: PostLineup, team2_lineup: PostLineup, player_relativities: Vec<PostPlayerRelativity>) -> PostMatchResult {
     let team1_players = vec![team1_lineup.first_rapid(), team1_lineup.second_blitz(), team1_lineup.third_blitz(), team1_lineup.forth_blitz(), team1_lineup.fifth_bullet()];
     let team2_players = vec![team2_lineup.first_rapid(), team2_lineup.second_blitz(), team2_lineup.third_blitz(), team2_lineup.forth_blitz(), team2_lineup.fifth_bullet()];
- 
-    // let mut random_white_started_win_probabilities = vec![0.0; team1_players.len()];
-    // let mut random_black_started_win_probabilities = vec![0.0; team1_players.len()];
-    // // 1. 랜덤화이트와 랜덤블랙을 둘 다 구한 후 그 둘의 평균 최종승리확률이 가장 높은 경우의 3인조합을 뽑음
-    // // 2. 나머지 2인의 조합은 랜덤화이트의 조합과 랜덤블랙의 4국 5국 조합을 각각 표시
 
     let mut white_started_win_probabilities = vec![0.0; team1_players.len()];
     let mut black_started_win_probabilities = vec![0.0; team1_players.len()];
@@ -2000,20 +2058,6 @@ pub fn calculate_match_result_post(team1_lineup: PostLineup, team2_lineup: PostL
     for (i, player1) in team1_players.iter().enumerate() {
         if let Some(player2) = team2_players.get(i) {
             if let Some(relativity) = player_relativities.iter().find(|r| r.player1().korean_name() == player1.korean_name() && r.player2().korean_name() == player2.korean_name()) {
-                // random_white_started_win_probabilities[i] = match i {
-                //     0 => (relativity.first_rapid_white_win_probability() + relativity.first_rapid_black_win_probability()) / 2.0,
-                //     1 => (relativity.second_blitz_white_win_probability() + relativity.second_blitz_black_win_probability()) / 2.0,
-                //     2 => (relativity.third_blitz_white_win_probability() + relativity.third_blitz_black_win_probability()) / 2.0,
-                //     3 => relativity.forth_blitz_black_win_probability(),
-                //     _ => relativity.fifth_bullet_white_win_probability(),
-                // };
-                // random_black_started_win_probabilities[i] = match i {
-                //     0 => (relativity.first_rapid_white_win_probability() + relativity.first_rapid_black_win_probability()) / 2.0,
-                //     1 => (relativity.second_blitz_white_win_probability() + relativity.second_blitz_black_win_probability()) / 2.0,
-                //     2 => (relativity.third_blitz_white_win_probability() + relativity.third_blitz_black_win_probability()) / 2.0,
-                //     3 => relativity.forth_blitz_white_win_probability(),
-                //     _ => relativity.fifth_bullet_black_win_probability(),
-                // };
                 white_started_win_probabilities[i] = match i {
                     0 => relativity.first_rapid_white_win_probability(),
                     1 => relativity.second_blitz_black_win_probability(),
@@ -2032,29 +2076,15 @@ pub fn calculate_match_result_post(team1_lineup: PostLineup, team2_lineup: PostL
         }
     }
 
-    // let random_white_started_all_win_probability = random_white_started_win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
     let white_started_all_win_probability = white_started_win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
-    // let random_black_started_all_win_probability = random_black_started_win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
     let black_started_all_win_probability = black_started_win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
 
-    // let random_white_started_four_win_one_lose_probability = random_white_started_win_probabilities.iter().enumerate().combinations(4).map(|win_indices| {
-    //     let win_prob_product = win_indices.iter().map(|&(i, _)| random_white_started_win_probabilities[i] / 100.0).product::<f64>();
-    //     let lose_index = (0..random_white_started_win_probabilities.len()).find(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).unwrap();
-    //     let lose_prob = 1.0 - (random_white_started_win_probabilities[lose_index] / 100.0);
-    //     win_prob_product * lose_prob
-    // }).sum::<f64>();
     let white_started_four_win_one_lose_probability = white_started_win_probabilities.iter().enumerate().combinations(4).map(|win_indices| {
         let win_prob_product = win_indices.iter().map(|&(i, _)| white_started_win_probabilities[i] / 100.0).product::<f64>();
         let lose_index = (0..white_started_win_probabilities.len()).find(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).unwrap();
         let lose_prob = 1.0 - (white_started_win_probabilities[lose_index] / 100.0);
         win_prob_product * lose_prob
     }).sum::<f64>();
-    // let random_black_started_four_win_one_lose_probability = random_black_started_win_probabilities.iter().enumerate().combinations(4).map(|win_indices| {
-    //     let win_prob_product = win_indices.iter().map(|&(i, _)| random_black_started_win_probabilities[i] / 100.0).product::<f64>();
-    //     let lose_index = (0..random_black_started_win_probabilities.len()).find(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).unwrap();
-    //     let lose_prob = 1.0 - (random_black_started_win_probabilities[lose_index] / 100.0);
-    //     win_prob_product * lose_prob
-    // }).sum::<f64>();
     let black_started_four_win_one_lose_probability = black_started_win_probabilities.iter().enumerate().combinations(4).map(|win_indices| {
         let win_prob_product = win_indices.iter().map(|&(i, _)| black_started_win_probabilities[i] / 100.0).product::<f64>();
         let lose_index = (0..black_started_win_probabilities.len()).find(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).unwrap();
@@ -2062,24 +2092,12 @@ pub fn calculate_match_result_post(team1_lineup: PostLineup, team2_lineup: PostL
         win_prob_product * lose_prob
     }).sum::<f64>();
 
-    // let random_white_started_three_win_two_lose_probability = random_white_started_win_probabilities.iter().enumerate().combinations(3).map(|win_indices| {
-    //     let win_prob_product = win_indices.iter().map(|&(i, _)| random_white_started_win_probabilities[i] / 100.0).product::<f64>();
-    //     let lose_indices = (0..random_white_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
-    //     let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (random_white_started_win_probabilities[i] / 100.0)).product::<f64>();
-    //     win_prob_product * lose_prob_product
-    // }).sum::<f64>();
     let white_started_three_win_two_lose_probability = white_started_win_probabilities.iter().enumerate().combinations(3).map(|win_indices| {
         let win_prob_product = win_indices.iter().map(|&(i, _)| white_started_win_probabilities[i] / 100.0).product::<f64>();
         let lose_indices = (0..white_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
         let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (white_started_win_probabilities[i] / 100.0)).product::<f64>();
         win_prob_product * lose_prob_product
     }).sum::<f64>();
-    // let random_black_started_three_win_two_lose_probability = random_black_started_win_probabilities.iter().enumerate().combinations(3).map(|win_indices| {
-    //     let win_prob_product = win_indices.iter().map(|&(i, _)| random_black_started_win_probabilities[i] / 100.0).product::<f64>();
-    //     let lose_indices = (0..random_black_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
-    //     let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (random_black_started_win_probabilities[i] / 100.0)).product::<f64>();
-    //     win_prob_product * lose_prob_product
-    // }).sum::<f64>();
     let black_started_three_win_two_lose_probability = black_started_win_probabilities.iter().enumerate().combinations(3).map(|win_indices| {
         let win_prob_product = win_indices.iter().map(|&(i, _)| black_started_win_probabilities[i] / 100.0).product::<f64>();
         let lose_indices = (0..black_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
@@ -2087,24 +2105,12 @@ pub fn calculate_match_result_post(team1_lineup: PostLineup, team2_lineup: PostL
         win_prob_product * lose_prob_product
     }).sum::<f64>();
 
-    // let random_white_started_two_win_three_lose_probability = random_white_started_win_probabilities.iter().enumerate().combinations(2).map(|win_indices| {
-    //     let win_prob_product = win_indices.iter().map(|&(i, _)| random_white_started_win_probabilities[i] / 100.0).product::<f64>();
-    //     let lose_indices = (0..random_white_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
-    //     let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (random_white_started_win_probabilities[i] / 100.0)).product::<f64>();
-    //     win_prob_product * lose_prob_product
-    // }).sum::<f64>();
     let white_started_two_win_three_lose_probability = white_started_win_probabilities.iter().enumerate().combinations(2).map(|win_indices| {
         let win_prob_product = win_indices.iter().map(|&(i, _)| white_started_win_probabilities[i] / 100.0).product::<f64>();
         let lose_indices = (0..white_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
         let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (white_started_win_probabilities[i] / 100.0)).product::<f64>();
         win_prob_product * lose_prob_product
     }).sum::<f64>();
-    // let random_black_started_two_win_three_lose_probability = random_black_started_win_probabilities.iter().enumerate().combinations(2).map(|win_indices| {
-    //     let win_prob_product = win_indices.iter().map(|&(i, _)| random_black_started_win_probabilities[i] / 100.0).product::<f64>();
-    //     let lose_indices = (0..random_black_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
-    //     let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (random_black_started_win_probabilities[i] / 100.0)).product::<f64>();
-    //     win_prob_product * lose_prob_product
-    // }).sum::<f64>();
     let black_started_two_win_three_lose_probability = black_started_win_probabilities.iter().enumerate().combinations(2).map(|win_indices| {
         let win_prob_product = win_indices.iter().map(|&(i, _)| black_started_win_probabilities[i] / 100.0).product::<f64>();
         let lose_indices = (0..black_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
@@ -2112,35 +2118,21 @@ pub fn calculate_match_result_post(team1_lineup: PostLineup, team2_lineup: PostL
         win_prob_product * lose_prob_product
     }).sum::<f64>();
 
-    // let random_white_started_one_win_four_lose_probability = random_white_started_win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
-    //     let win_prob = win_prob / 100.0;
-    //     let lose_prob_product = random_white_started_win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_lose_prob)| 1.0 - (other_lose_prob / 100.0)).product::<f64>();
-    //     win_prob * lose_prob_product
-    // }).sum::<f64>();
     let white_started_one_win_four_lose_probability = white_started_win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
         let win_prob = win_prob / 100.0;
         let lose_prob_product = white_started_win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_lose_prob)| 1.0 - (other_lose_prob / 100.0)).product::<f64>();
         win_prob * lose_prob_product
     }).sum::<f64>();
-    // let random_black_started_one_win_four_lose_probability = random_black_started_win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
-    //     let win_prob = win_prob / 100.0;
-    //     let lose_prob_product = random_black_started_win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_lose_prob)| 1.0 - (other_lose_prob / 100.0)).product::<f64>();
-    //     win_prob * lose_prob_product
-    // }).sum::<f64>();
     let black_started_one_win_four_lose_probability = black_started_win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
         let win_prob = win_prob / 100.0;
         let lose_prob_product = black_started_win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_lose_prob)| 1.0 - (other_lose_prob / 100.0)).product::<f64>();
         win_prob * lose_prob_product
     }).sum::<f64>();
 
-    // let random_white_started_all_lose_probability = random_white_started_win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
     let white_started_all_lose_probability = white_started_win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
-    // let random_black_started_all_lose_probability = random_black_started_win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
     let black_started_all_lose_probability = black_started_win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
 
-    // let random_white_started_total_win_probability = random_white_started_all_win_probability + random_white_started_four_win_one_lose_probability + random_white_started_three_win_two_lose_probability;
     let white_started_total_win_probability = white_started_all_win_probability + white_started_four_win_one_lose_probability + white_started_three_win_two_lose_probability;
-    // let random_black_started_total_win_probability = random_black_started_all_win_probability + random_black_started_four_win_one_lose_probability + random_black_started_three_win_two_lose_probability;
     let black_started_total_win_probability = black_started_all_win_probability + black_started_four_win_one_lose_probability + black_started_three_win_two_lose_probability;
 
     PostMatchResult::new(
@@ -2173,112 +2165,8 @@ pub fn calculate_match_result_post(team1_lineup: PostLineup, team2_lineup: PostL
         black_started_one_win_four_lose_probability * 100.0,
         black_started_all_lose_probability * 100.0,
         black_started_total_win_probability * 100.0,
-        // random_white_started_total_win_probability * 100.0,
-        // random_black_started_total_win_probability * 100.0,
     )
 }
-
-// pub fn calculate_match_result_post(team1_lineup: PostLineup, team2_lineup: PostLineup, player_relativities: Vec<PostPlayerRelativity>) -> PostMatchResult {
-//     let team1_players = vec![team1_lineup.first_rapid(), team1_lineup.second_blitz(), team1_lineup.third_blitz(), team1_lineup.forth_blitz(), team1_lineup.fifth_bullet()];
-//     let team2_players = vec![team2_lineup.first_rapid(), team2_lineup.second_blitz(), team2_lineup.third_blitz(), team2_lineup.forth_blitz(), team2_lineup.fifth_bullet()];
-
-//     let mut random_white_started_win_probabilities = vec![0.0; 3];
-//     let mut random_black_started_win_probabilities = vec![0.0; 3];
-//     // 1. 랜덤화이트와 랜덤블랙을 둘 다 구한 후 그 둘의 평균 최종승리확률이 가장 높은 경우의 3인조합을 뽑음
-//     // 2. 나머지 2인의 조합은 랜덤화이트의 조합과 랜덤블랙의 4국 5국 조합을 각각 표시
-
-//     let mut white_started_win_probabilities = vec![0.0; team1_players.len()];
-//     let mut black_started_win_probabilities = vec![0.0; team1_players.len()];
-
-//     for (i, player1) in team1_players.iter().enumerate() {
-//         if let Some(player2) = team2_players.get(i) {
-//             if let Some(relativity) = player_relativities.iter().find(|r| r.player1().korean_name() == player1.korean_name() && r.player2().korean_name() == player2.korean_name()) {
-//                 random_white_started_win_probabilities[i] = match i {
-//                     0 => (relativity.first_rapid_white_win_probability() + relativity.first_rapid_black_win_probability()) / 2.0,
-//                     1 => (relativity.second_blitz_white_win_probability() + relativity.second_blitz_black_win_probability()) / 2.0,
-//                     2 => (relativity.third_blitz_white_win_probability() + relativity.third_blitz_black_win_probability()) / 2.0,
-//                     3 => relativity.forth_blitz_black_win_probability(),
-//                     _ => relativity.fifth_bullet_white_win_probability(),
-//                 };
-//                 random_black_started_win_probabilities[i] = match i {
-//                     0 => (relativity.first_rapid_white_win_probability() + relativity.first_rapid_black_win_probability()) / 2.0,
-//                     1 => (relativity.second_blitz_white_win_probability() + relativity.second_blitz_black_win_probability()) / 2.0,
-//                     2 => (relativity.third_blitz_white_win_probability() + relativity.third_blitz_black_win_probability()) / 2.0,
-//                     3 => relativity.forth_blitz_white_win_probability(),
-//                     _ => relativity.fifth_bullet_black_win_probability(),
-//                 };
-//                 white_started_win_probabilities[i] = match i {
-//                     0 => relativity.first_rapid_white_win_probability(),
-//                     1 => relativity.second_blitz_black_win_probability(),
-//                     2 => relativity.third_blitz_white_win_probability(),
-//                     3 => relativity.forth_blitz_black_win_probability(),
-//                     _ => relativity.fifth_bullet_white_win_probability(),
-//                 };
-//                 black_started_win_probabilities[i] = match i {
-//                     0 => relativity.first_rapid_black_win_probability(),
-//                     1 => relativity.second_blitz_white_win_probability(),
-//                     2 => relativity.third_blitz_black_win_probability(),
-//                     3 => relativity.forth_blitz_white_win_probability(),
-//                     _ => relativity.fifth_bullet_black_win_probability(),
-//                 };
-//             }
-//         }
-//     }
-
-//     let all_win_probability = win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
-
-//     let four_win_one_lose_probability = win_probabilities.iter().enumerate().combinations(4).map(|win_indices| {
-//         let win_prob_product = win_indices.iter().map(|&(i, _)| win_probabilities[i] / 100.0).product::<f64>();
-//         let lose_index = (0..win_probabilities.len()).find(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).unwrap();
-//         let lose_prob = 1.0 - (win_probabilities[lose_index] / 100.0);
-//         win_prob_product * lose_prob
-//     }).sum::<f64>();
-
-//     let three_win_two_lose_probability = win_probabilities.iter().enumerate().combinations(3).map(|win_indices| {
-//         let win_prob_product = win_indices.iter().map(|&(i, _)| win_probabilities[i] / 100.0).product::<f64>();
-//         let lose_indices = (0..win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
-//         let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (win_probabilities[i] / 100.0)).product::<f64>();
-//         win_prob_product * lose_prob_product
-//     }).sum::<f64>();
-
-//     let two_win_three_lose_probability = win_probabilities.iter().enumerate().combinations(2).map(|win_indices| {
-//         let win_prob_product = win_indices.iter().map(|&(i, _)| win_probabilities[i] / 100.0).product::<f64>();
-//         let lose_indices = (0..win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
-//         let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (win_probabilities[i] / 100.0)).product::<f64>();
-//         win_prob_product * lose_prob_product
-//     }).sum::<f64>();
-
-//     let one_win_four_lose_probability = win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
-//         let win_prob = win_prob / 100.0;
-//         let lose_prob_product = win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_lose_prob)| 1.0 - (other_lose_prob / 100.0)).product::<f64>();
-//         win_prob * lose_prob_product
-//     }).sum::<f64>();
-
-//     let all_lose_probability = win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
-
-//     let total_win_probability = all_win_probability + four_win_one_lose_probability + three_win_two_lose_probability;
-
-//     PostMatchResult::new(
-//         player_relativities.iter().find(|relativity| relativity.player1().korean_name() == team1_players[0].korean_name() && relativity.player2().korean_name() == team2_players[0].korean_name()).unwrap().clone(),
-//         player_relativities.iter().find(|relativity| relativity.player1().korean_name() == team1_players[1].korean_name() && relativity.player2().korean_name() == team2_players[1].korean_name()).unwrap().clone(),
-//         player_relativities.iter().find(|relativity| relativity.player1().korean_name() == team1_players[2].korean_name() && relativity.player2().korean_name() == team2_players[2].korean_name()).unwrap().clone(),
-//         player_relativities.iter().find(|relativity| relativity.player1().korean_name() == team1_players[3].korean_name() && relativity.player2().korean_name() == team2_players[3].korean_name()).unwrap().clone(),
-//         player_relativities.iter().find(|relativity| relativity.player1().korean_name() == team1_players[4].korean_name() && relativity.player2().korean_name() == team2_players[4].korean_name()).unwrap().clone(),
-//         win_probabilities[0],
-//         win_probabilities[1],
-//         win_probabilities[2],
-//         win_probabilities[3],
-//         win_probabilities[4],
-//         all_win_probability * 100.0,
-//         three_win_one_lose_probability * 100.0,
-//         two_win_two_lose_probability * 100.0,
-//         one_win_three_lose_probability * 100.0,
-//         all_lose_probability * 100.0,
-//         total_win_probability * 100.0,
-//         vec![team1_tiebreaker_details.cloned(), team2_tiebreaker_details.cloned()],
-//         tiebreaker_win_probability,
-//     )
-// }
 
 pub fn create_excel_from_relativities_post(player_relativities: Vec<PostPlayerRelativity>) -> Result<(), Box<dyn std::error::Error>> {
     let workbook = Workbook::new("player_relativities.xlsx")?;
@@ -2379,14 +2267,14 @@ pub fn create_excel_from_relativities_post(player_relativities: Vec<PostPlayerRe
     Ok(())
 }
 
-pub fn filter_team1_lineups_post(selected_teams: &[Team], team1_all_lineups: &[PostLineup]) -> Vec<PostLineup> {
+pub fn get_team_combination_post(selected_team: &Team) -> Vec<Player> {
     let unknown_player = Player::new("알 수 없음".to_string(), "unknown".to_string(), "未知".to_string(), NaiveDate::from_ymd_opt(2000, 1, 1).expect("Invalid date"), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HashMap::new());
 
-    let mut team1_combination: Vec<&Player> = Vec::new();
-    println!("\n{} 팀의 스쿼드:", selected_teams[0].team_name());
+    let mut team_combination: Vec<Player> = Vec::new();
+    println!("\n{} 팀의 스쿼드:", selected_team.team_name());
     println!("특정 기사에게 고정포지션이 있다면 선택해주세요. 없다면 알 수 없음을 선택해주세요.");
     let mut last_index = 0;
-    for (index, player) in selected_teams[0].players().iter().enumerate() {
+    for (index, player) in selected_team.players().iter().enumerate() {
         println!("{}. {} (elo: {:.2}, 컨디션: {:.2}, 장고: {:.2}, 속기: {:.2}, 초속기: {:.2})", index + 1, player.korean_name(), player.elo_rating(), player.condition_weight(), player.rapid_weight(), player.blitz_weight(), player.bullet_weight());
         last_index = index;
     }
@@ -2394,27 +2282,763 @@ pub fn filter_team1_lineups_post(selected_teams: &[Team], team1_all_lineups: &[P
     for i in 0..5 {
         loop {
             let mut input = String::new();
-            println!("\n{} 팀의 {}국 {} 기사 번호를 입력하세요:", selected_teams[0].team_name(), i + 1, if i == 0 { "장고(rapid)" } else if i < 4 { "속기(blitz)" } else { "초속기(bullet)" });
+            println!("\n{} 팀의 {}국 {} 기사 번호를 입력하세요:", selected_team.team_name(), i + 1, if i == 0 { "장고(rapid)" } else if i < 4 { "속기(blitz)" } else { "초속기(bullet)" });
             io::stdin().read_line(&mut input).expect("입력을 읽는 데 실패했습니다.");
             match input.trim().parse::<usize>() {
-                Ok(num) if num > 0 && num <= selected_teams[0].players().len() => {
-                    team1_combination.push(&selected_teams[0].players()[num - 1]);
+                Ok(num) if num > 0 && num <= selected_team.players().len() => {
+                    team_combination.push(selected_team.players()[num - 1].clone());
                     break;
                 },
-                Ok(num) if num == selected_teams[0].players().len() + 1 => {
-                    team1_combination.push(&unknown_player);
+                Ok(num) if num == selected_team.players().len() + 1 => {
+                    team_combination.push(unknown_player.clone());
                     break;
                 },
                 _ => println!("잘못된 입력입니다. 다시 입력해주세요."),
             }
         }
     }
+    team_combination
+}
 
-    team1_all_lineups.iter().filter(|lineup| {
-        (team1_combination[0].english_name() == "unknown" || lineup.first_rapid().korean_name() == team1_combination[0].korean_name()) &&
-        (team1_combination[1].english_name() == "unknown" || lineup.second_blitz().korean_name() == team1_combination[1].korean_name()) &&
-        (team1_combination[2].english_name() == "unknown" || lineup.third_blitz().korean_name() == team1_combination[2].korean_name()) &&
-        (team1_combination[3].english_name() == "unknown" || lineup.forth_blitz().korean_name() == team1_combination[3].korean_name()) &&
-        (team1_combination[4].english_name() == "unknown" || lineup.fifth_bullet().korean_name() == team1_combination[4].korean_name())
-    }).cloned().collect()
+pub fn get_123_wpa_win_result_post(match_result: &PostMatchResult) -> PostWPAResult {
+    let mut match_result_for_first_rapid_wpa = match_result.clone();
+    match_result_for_first_rapid_wpa.set_first_rapid_white_win_probability(100.0);
+    match_result_for_first_rapid_wpa.set_first_rapid_black_win_probability(100.0);
+    let mut match_result_for_second_blitz_wpa = match_result.clone();
+    match_result_for_second_blitz_wpa.set_second_blitz_black_win_probability(100.0);
+    match_result_for_second_blitz_wpa.set_second_blitz_white_win_probability(100.0);
+    let mut match_result_for_third_blitz_wpa = match_result.clone();
+    match_result_for_third_blitz_wpa.set_third_blitz_white_win_probability(100.0);
+    match_result_for_third_blitz_wpa.set_third_blitz_black_win_probability(100.0);
+    let mut match_result_for_forth_blitz_wpa = match_result.clone();
+    match_result_for_forth_blitz_wpa.set_forth_blitz_black_win_probability(match_result.forth_blitz_black_win_probability());
+    match_result_for_forth_blitz_wpa.set_forth_blitz_white_win_probability(match_result.forth_blitz_white_win_probability());
+    let mut match_result_for_fifth_bullet_wpa = match_result.clone();
+    match_result_for_fifth_bullet_wpa.set_fifth_bullet_white_win_probability(match_result.fifth_bullet_white_win_probability());
+    match_result_for_fifth_bullet_wpa.set_fifth_bullet_black_win_probability(match_result.fifth_bullet_black_win_probability());
+
+    let (white_win_prob, black_win_prob) = get_total_win_probability_post(match_result.clone());
+    let (
+        first_rapid_white_player1_wpa,
+        first_rapid_black_player1_wpa,
+        first_rapid_black_player2_wpa,
+        first_rapid_white_player2_wpa,
+        second_blitz_black_player1_wpa,
+        second_blitz_white_player1_wpa,
+        second_blitz_white_player2_wpa,
+        second_blitz_black_player2_wpa,
+        third_blitz_white_player1_wpa,
+        third_blitz_black_player1_wpa,
+        third_blitz_black_player2_wpa,
+        third_blitz_white_player2_wpa
+    ) = (|| {
+        let (first_rapid_white_win_prob, first_rapid_black_win_prob) = get_total_win_probability_post(match_result_for_first_rapid_wpa);
+        let (second_blitz_black_win_prob, second_blitz_white_win_prob) = get_total_win_probability_post(match_result_for_second_blitz_wpa);
+        let (third_blitz_white_win_prob, third_blitz_black_win_prob) = get_total_win_probability_post(match_result_for_third_blitz_wpa);
+
+        (
+            first_rapid_white_win_prob - white_win_prob,
+            first_rapid_black_win_prob - black_win_prob,
+            white_win_prob - first_rapid_white_win_prob,
+            black_win_prob - first_rapid_black_win_prob,
+            second_blitz_black_win_prob - white_win_prob,
+            second_blitz_white_win_prob - black_win_prob,
+            white_win_prob - second_blitz_black_win_prob,
+            black_win_prob - second_blitz_white_win_prob,
+            third_blitz_white_win_prob - white_win_prob,
+            third_blitz_black_win_prob - black_win_prob,
+            white_win_prob - third_blitz_white_win_prob,
+            black_win_prob - third_blitz_black_win_prob
+        )
+    })();
+
+    PostWPAResult::new(
+        first_rapid_white_player1_wpa,
+        first_rapid_black_player1_wpa,
+        first_rapid_black_player2_wpa,
+        first_rapid_white_player2_wpa,
+        second_blitz_black_player1_wpa,
+        second_blitz_white_player1_wpa,
+        second_blitz_white_player2_wpa,
+        second_blitz_black_player2_wpa,
+        third_blitz_white_player1_wpa,
+        third_blitz_black_player1_wpa,
+        third_blitz_black_player2_wpa,
+        third_blitz_white_player2_wpa,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+    )
+}
+
+pub fn get_123_wpa_lose_result_post(match_result: &PostMatchResult) -> PostWPAResult {
+    let mut match_result_for_first_rapid_wpa = match_result.clone();
+    match_result_for_first_rapid_wpa.set_first_rapid_white_win_probability(0.0);
+    match_result_for_first_rapid_wpa.set_first_rapid_black_win_probability(0.0);
+    let mut match_result_for_second_blitz_wpa = match_result.clone();
+    match_result_for_second_blitz_wpa.set_second_blitz_black_win_probability(0.0);
+    match_result_for_second_blitz_wpa.set_second_blitz_white_win_probability(0.0);
+    let mut match_result_for_third_blitz_wpa = match_result.clone();
+    match_result_for_third_blitz_wpa.set_third_blitz_white_win_probability(0.0);
+    match_result_for_third_blitz_wpa.set_third_blitz_black_win_probability(0.0);
+
+    let (white_win_prob, black_win_prob) = get_total_win_probability_post(match_result.clone());
+    let (
+        first_rapid_white_player1_wpa,
+        first_rapid_black_player1_wpa,
+        first_rapid_black_player2_wpa,
+        first_rapid_white_player2_wpa,
+        second_blitz_black_player1_wpa,
+        second_blitz_white_player1_wpa,
+        second_blitz_white_player2_wpa,
+        second_blitz_black_player2_wpa,
+        third_blitz_white_player1_wpa,
+        third_blitz_black_player1_wpa,
+        third_blitz_black_player2_wpa,
+        third_blitz_white_player2_wpa,
+    ) = (|| {
+        let (first_rapid_white_win_prob, first_rapid_black_win_prob) = get_total_win_probability_post(match_result_for_first_rapid_wpa);
+        let (second_blitz_black_win_prob, second_blitz_white_win_prob) = get_total_win_probability_post(match_result_for_second_blitz_wpa);
+        let (third_blitz_white_win_prob, third_blitz_black_win_prob) = get_total_win_probability_post(match_result_for_third_blitz_wpa);
+
+        (
+            first_rapid_white_win_prob - white_win_prob,
+            first_rapid_black_win_prob - black_win_prob,
+            white_win_prob - first_rapid_white_win_prob,
+            black_win_prob - first_rapid_black_win_prob,
+            second_blitz_black_win_prob - white_win_prob,
+            second_blitz_white_win_prob - black_win_prob,
+            white_win_prob - second_blitz_black_win_prob,
+            black_win_prob - second_blitz_white_win_prob,
+            third_blitz_white_win_prob - white_win_prob,
+            third_blitz_black_win_prob - black_win_prob,
+            white_win_prob - third_blitz_white_win_prob,
+            black_win_prob - third_blitz_black_win_prob,
+        )
+    })();
+
+    PostWPAResult::new(
+        first_rapid_white_player1_wpa,
+        first_rapid_black_player1_wpa,
+        first_rapid_black_player2_wpa,
+        first_rapid_white_player2_wpa,
+        second_blitz_black_player1_wpa,
+        second_blitz_white_player1_wpa,
+        second_blitz_white_player2_wpa,
+        second_blitz_black_player2_wpa,
+        third_blitz_white_player1_wpa,
+        third_blitz_black_player1_wpa,
+        third_blitz_black_player2_wpa,
+        third_blitz_white_player2_wpa,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+    )
+}
+
+pub fn get_wwl_4_wpa_win_result_post(match_result: &PostMatchResult) -> PostWPAResult {
+    let mut match_result_clone = match_result.clone();
+    match_result_clone.set_first_rapid_white_win_probability(100.0);
+    match_result_clone.set_first_rapid_black_win_probability(100.0);
+    match_result_clone.set_second_blitz_black_win_probability(100.0);
+    match_result_clone.set_second_blitz_white_win_probability(100.0);
+    match_result_clone.set_third_blitz_white_win_probability(0.0);
+    match_result_clone.set_third_blitz_black_win_probability(0.0);
+    let mut match_result_for_forth_blitz_wpa = match_result.clone();
+    match_result_for_forth_blitz_wpa.set_first_rapid_white_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_first_rapid_black_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_second_blitz_black_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_second_blitz_white_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_third_blitz_white_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_third_blitz_black_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_forth_blitz_black_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_forth_blitz_white_win_probability(100.0);
+
+    let (white_win_prob, black_win_prob) = get_total_win_probability_post(match_result_clone.clone());
+    let (
+        forth_blitz_black_player1_wpa,
+        forth_blitz_white_player1_wpa,
+        forth_blitz_white_player2_wpa,
+        forth_blitz_black_player2_wpa,
+    ) = (|| {
+        let (forth_blitz_black_win_prob, forth_blitz_white_win_prob) = get_total_win_probability_post(match_result_for_forth_blitz_wpa);
+
+        (
+            forth_blitz_black_win_prob - white_win_prob,
+            forth_blitz_white_win_prob - black_win_prob,
+            white_win_prob - forth_blitz_black_win_prob,
+            black_win_prob - forth_blitz_white_win_prob,
+        )
+    })();
+
+    PostWPAResult::new(
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        forth_blitz_black_player1_wpa,
+        forth_blitz_white_player1_wpa,
+        forth_blitz_white_player2_wpa,
+        forth_blitz_black_player2_wpa,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+    )
+}
+
+pub fn get_wwl_4_wpa_lose_result_post(match_result: &PostMatchResult) -> PostWPAResult {
+    let mut match_result_clone = match_result.clone();
+    match_result_clone.set_first_rapid_white_win_probability(100.0);
+    match_result_clone.set_first_rapid_black_win_probability(100.0);
+    match_result_clone.set_second_blitz_black_win_probability(100.0);
+    match_result_clone.set_second_blitz_white_win_probability(100.0);
+    match_result_clone.set_third_blitz_white_win_probability(0.0);
+    match_result_clone.set_third_blitz_black_win_probability(0.0);
+    let mut match_result_for_forth_blitz_wpa = match_result.clone();
+    match_result_for_forth_blitz_wpa.set_first_rapid_white_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_first_rapid_black_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_second_blitz_black_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_second_blitz_white_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_third_blitz_white_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_third_blitz_black_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_forth_blitz_black_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_forth_blitz_white_win_probability(0.0);
+
+    let (white_win_prob, black_win_prob) = get_total_win_probability_post(match_result_clone.clone());
+    let (
+        forth_blitz_black_player1_wpa,
+        forth_blitz_white_player1_wpa,
+        forth_blitz_white_player2_wpa,
+        forth_blitz_black_player2_wpa
+    ) = (|| {
+        let (forth_blitz_black_win_prob, forth_blitz_white_win_prob) = get_total_win_probability_post(match_result_for_forth_blitz_wpa);
+
+        (
+            forth_blitz_black_win_prob - white_win_prob,
+            forth_blitz_white_win_prob - black_win_prob,
+            white_win_prob - forth_blitz_black_win_prob,
+            black_win_prob - forth_blitz_white_win_prob
+        )
+    })();
+
+    PostWPAResult::new(
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        forth_blitz_black_player1_wpa,
+        forth_blitz_white_player1_wpa,
+        forth_blitz_white_player2_wpa,
+        forth_blitz_black_player2_wpa,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+    )
+}
+
+pub fn get_wll_4_wpa_win_result_post(match_result: &PostMatchResult) -> PostWPAResult {
+    let mut match_result_clone = match_result.clone();
+    match_result_clone.set_first_rapid_white_win_probability(100.0);
+    match_result_clone.set_first_rapid_black_win_probability(100.0);
+    match_result_clone.set_second_blitz_black_win_probability(0.0);
+    match_result_clone.set_second_blitz_white_win_probability(0.0);
+    match_result_clone.set_third_blitz_white_win_probability(0.0);
+    match_result_clone.set_third_blitz_black_win_probability(0.0);
+    let mut match_result_for_forth_blitz_wpa = match_result.clone();
+    match_result_for_forth_blitz_wpa.set_first_rapid_white_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_first_rapid_black_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_second_blitz_black_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_second_blitz_white_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_third_blitz_white_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_third_blitz_black_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_forth_blitz_black_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_forth_blitz_white_win_probability(100.0);
+
+    let (white_win_prob, black_win_prob) = get_total_win_probability_post(match_result_clone.clone());
+    let (
+        forth_blitz_black_player1_wpa,
+        forth_blitz_white_player1_wpa,
+        forth_blitz_white_player2_wpa,
+        forth_blitz_black_player2_wpa,
+    ) = (|| {
+        let (forth_blitz_black_win_prob, forth_blitz_white_win_prob) = get_total_win_probability_post(match_result_for_forth_blitz_wpa);
+
+        (
+            forth_blitz_black_win_prob - white_win_prob,
+            forth_blitz_white_win_prob - black_win_prob,
+            white_win_prob - forth_blitz_black_win_prob,
+            black_win_prob - forth_blitz_white_win_prob,
+        )
+    })();
+
+    PostWPAResult::new(
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        forth_blitz_black_player1_wpa,
+        forth_blitz_white_player1_wpa,
+        forth_blitz_white_player2_wpa,
+        forth_blitz_black_player2_wpa,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+    )
+}
+
+pub fn get_wll_4_wpa_lose_result_post(match_result: &PostMatchResult) -> PostWPAResult {
+    let mut match_result_clone = match_result.clone();
+    match_result_clone.set_first_rapid_white_win_probability(100.0);
+    match_result_clone.set_first_rapid_black_win_probability(100.0);
+    match_result_clone.set_second_blitz_black_win_probability(0.0);
+    match_result_clone.set_second_blitz_white_win_probability(0.0);
+    match_result_clone.set_third_blitz_white_win_probability(0.0);
+    match_result_clone.set_third_blitz_black_win_probability(0.0);
+    let mut match_result_for_forth_blitz_wpa = match_result.clone();
+    match_result_for_forth_blitz_wpa.set_first_rapid_white_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_first_rapid_black_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_second_blitz_black_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_second_blitz_white_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_third_blitz_white_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_third_blitz_black_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_forth_blitz_black_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_forth_blitz_white_win_probability(0.0);
+
+    let (white_win_prob, black_win_prob) = get_total_win_probability_post(match_result_clone.clone());
+    let (
+        forth_blitz_black_player1_wpa,
+        forth_blitz_white_player1_wpa,
+        forth_blitz_white_player2_wpa,
+        forth_blitz_black_player2_wpa
+    ) = (|| {
+        let (forth_blitz_black_win_prob, forth_blitz_white_win_prob) = get_total_win_probability_post(match_result_for_forth_blitz_wpa);
+
+        (
+            forth_blitz_black_win_prob - white_win_prob,
+            forth_blitz_white_win_prob - black_win_prob,
+            white_win_prob - forth_blitz_black_win_prob,
+            black_win_prob - forth_blitz_white_win_prob,
+        )
+    })();
+
+    PostWPAResult::new(
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        forth_blitz_black_player1_wpa,
+        forth_blitz_white_player1_wpa,
+        forth_blitz_white_player2_wpa,
+        forth_blitz_black_player2_wpa,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+    )
+}
+
+pub fn get_5_wpa_win_result_post(match_result: &PostMatchResult) -> PostWPAResult {
+    let mut match_result_clone = match_result.clone();
+    match_result_clone.set_first_rapid_white_win_probability(100.0);
+    match_result_clone.set_first_rapid_black_win_probability(100.0);
+    match_result_clone.set_second_blitz_black_win_probability(100.0);
+    match_result_clone.set_second_blitz_white_win_probability(100.0);
+    match_result_clone.set_third_blitz_white_win_probability(0.0);
+    match_result_clone.set_third_blitz_black_win_probability(0.0);
+    match_result_clone.set_forth_blitz_black_win_probability(0.0);
+    match_result_clone.set_forth_blitz_white_win_probability(0.0);
+    let mut match_result_for_fifth_bullet_wpa = match_result.clone();
+    match_result_for_fifth_bullet_wpa.set_first_rapid_white_win_probability(100.0);
+    match_result_for_fifth_bullet_wpa.set_first_rapid_black_win_probability(100.0);
+    match_result_for_fifth_bullet_wpa.set_second_blitz_black_win_probability(100.0);
+    match_result_for_fifth_bullet_wpa.set_second_blitz_white_win_probability(100.0);
+    match_result_for_fifth_bullet_wpa.set_third_blitz_white_win_probability(0.0);
+    match_result_for_fifth_bullet_wpa.set_third_blitz_black_win_probability(0.0);
+    match_result_for_fifth_bullet_wpa.set_forth_blitz_black_win_probability(0.0);
+    match_result_for_fifth_bullet_wpa.set_forth_blitz_white_win_probability(0.0);
+    match_result_for_fifth_bullet_wpa.set_fifth_bullet_white_win_probability(100.0);
+    match_result_for_fifth_bullet_wpa.set_fifth_bullet_black_win_probability(100.0);
+
+    let (white_win_prob, black_win_prob) = get_total_win_probability_post(match_result_clone.clone());
+    let (
+        fifth_bullet_white_player1_wpa,
+        fifth_bullet_black_player1_wpa,
+        fifth_bullet_black_player2_wpa,
+        fifth_bullet_white_player2_wpa
+    ) = (|| {
+        let (fifth_bullet_white_win_prob, fifth_bullet_black_win_prob) = get_total_win_probability_post(match_result_for_fifth_bullet_wpa);
+
+        (
+            fifth_bullet_white_win_prob - white_win_prob,
+            fifth_bullet_black_win_prob - black_win_prob,
+            white_win_prob - fifth_bullet_white_win_prob,
+            black_win_prob - fifth_bullet_black_win_prob
+        )
+    })();
+
+    PostWPAResult::new(
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        fifth_bullet_white_player1_wpa,
+        fifth_bullet_black_player1_wpa,
+        fifth_bullet_black_player2_wpa,
+        fifth_bullet_white_player2_wpa
+    )
+}
+
+pub fn get_5_wpa_lose_result_post(match_result: &PostMatchResult) -> PostWPAResult {
+    let mut match_result_clone = match_result.clone();
+    match_result_clone.set_first_rapid_white_win_probability(100.0);
+    match_result_clone.set_first_rapid_black_win_probability(100.0);
+    match_result_clone.set_second_blitz_black_win_probability(100.0);
+    match_result_clone.set_second_blitz_white_win_probability(100.0);
+    match_result_clone.set_third_blitz_white_win_probability(0.0);
+    match_result_clone.set_third_blitz_black_win_probability(0.0);
+    match_result_clone.set_forth_blitz_black_win_probability(0.0);
+    match_result_clone.set_forth_blitz_white_win_probability(0.0);
+    let mut match_result_for_fifth_bullet_wpa = match_result.clone();
+    match_result_for_fifth_bullet_wpa.set_first_rapid_white_win_probability(100.0);
+    match_result_for_fifth_bullet_wpa.set_first_rapid_black_win_probability(100.0);
+    match_result_for_fifth_bullet_wpa.set_second_blitz_black_win_probability(100.0);
+    match_result_for_fifth_bullet_wpa.set_second_blitz_white_win_probability(100.0);
+    match_result_for_fifth_bullet_wpa.set_third_blitz_white_win_probability(0.0);
+    match_result_for_fifth_bullet_wpa.set_third_blitz_black_win_probability(0.0);
+    match_result_for_fifth_bullet_wpa.set_forth_blitz_black_win_probability(0.0);
+    match_result_for_fifth_bullet_wpa.set_forth_blitz_white_win_probability(0.0);
+    match_result_for_fifth_bullet_wpa.set_fifth_bullet_white_win_probability(0.0);
+    match_result_for_fifth_bullet_wpa.set_fifth_bullet_black_win_probability(0.0);
+
+    let (white_win_prob, black_win_prob) = get_total_win_probability_post(match_result_clone.clone());
+    let (
+        fifth_bullet_white_player1_wpa,
+        fifth_bullet_black_player1_wpa,
+        fifth_bullet_black_player2_wpa,
+        fifth_bullet_white_player2_wpa
+    ) = (|| {
+        let (fifth_bullet_white_win_prob, fifth_bullet_black_win_prob) = get_total_win_probability_post(match_result_for_fifth_bullet_wpa);
+
+        (
+            fifth_bullet_white_win_prob - white_win_prob,
+            fifth_bullet_black_win_prob - black_win_prob,
+            white_win_prob - fifth_bullet_white_win_prob,
+            black_win_prob - fifth_bullet_black_win_prob
+        )
+    })();
+
+    PostWPAResult::new(
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        fifth_bullet_white_player1_wpa,
+        fifth_bullet_black_player1_wpa,
+        fifth_bullet_black_player2_wpa,
+        fifth_bullet_white_player2_wpa
+    )
+}
+
+fn get_total_win_probability_post(match_result: PostMatchResult) -> (f64, f64) {
+    let white_started_win_probabilities = [
+        match_result.first_rapid_white_win_probability(),
+        match_result.second_blitz_black_win_probability(),
+        match_result.third_blitz_white_win_probability(),
+        match_result.forth_blitz_black_win_probability(),
+        match_result.fifth_bullet_white_win_probability(),
+    ];
+    let black_started_win_probabilities = [
+        match_result.first_rapid_black_win_probability(),
+        match_result.second_blitz_white_win_probability(),
+        match_result.third_blitz_black_win_probability(),
+        match_result.forth_blitz_white_win_probability(),
+        match_result.fifth_bullet_black_win_probability(),
+    ];
+
+    let white_started_all_win_probability = white_started_win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
+    let black_started_all_win_probability = black_started_win_probabilities.iter().map(|p| p / 100.0).product::<f64>();
+
+    let white_started_four_win_one_lose_probability = white_started_win_probabilities.iter().enumerate().combinations(4).map(|win_indices| {
+        let win_prob_product = win_indices.iter().map(|&(i, _)| white_started_win_probabilities[i] / 100.0).product::<f64>();
+        let lose_index = (0..white_started_win_probabilities.len()).find(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).unwrap();
+        let lose_prob = 1.0 - (white_started_win_probabilities[lose_index] / 100.0);
+        win_prob_product * lose_prob
+    }).sum::<f64>();
+    let black_started_four_win_one_lose_probability = black_started_win_probabilities.iter().enumerate().combinations(4).map(|win_indices| {
+        let win_prob_product = win_indices.iter().map(|&(i, _)| black_started_win_probabilities[i] / 100.0).product::<f64>();
+        let lose_index = (0..black_started_win_probabilities.len()).find(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).unwrap();
+        let lose_prob = 1.0 - (black_started_win_probabilities[lose_index] / 100.0);
+        win_prob_product * lose_prob
+    }).sum::<f64>();
+
+    let white_started_three_win_two_lose_probability = white_started_win_probabilities.iter().enumerate().combinations(3).map(|win_indices| {
+        let win_prob_product = win_indices.iter().map(|&(i, _)| white_started_win_probabilities[i] / 100.0).product::<f64>();
+        let lose_indices = (0..white_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
+        let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (white_started_win_probabilities[i] / 100.0)).product::<f64>();
+        win_prob_product * lose_prob_product
+    }).sum::<f64>();
+    let black_started_three_win_two_lose_probability = black_started_win_probabilities.iter().enumerate().combinations(3).map(|win_indices| {
+        let win_prob_product = win_indices.iter().map(|&(i, _)| black_started_win_probabilities[i] / 100.0).product::<f64>();
+        let lose_indices = (0..black_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
+        let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (black_started_win_probabilities[i] / 100.0)).product::<f64>();
+        win_prob_product * lose_prob_product
+    }).sum::<f64>();
+
+    let white_started_two_win_three_lose_probability = white_started_win_probabilities.iter().enumerate().combinations(2).map(|win_indices| {
+        let win_prob_product = win_indices.iter().map(|&(i, _)| white_started_win_probabilities[i] / 100.0).product::<f64>();
+        let lose_indices = (0..white_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
+        let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (white_started_win_probabilities[i] / 100.0)).product::<f64>();
+        win_prob_product * lose_prob_product
+    }).sum::<f64>();
+    let black_started_two_win_three_lose_probability = black_started_win_probabilities.iter().enumerate().combinations(2).map(|win_indices| {
+        let win_prob_product = win_indices.iter().map(|&(i, _)| black_started_win_probabilities[i] / 100.0).product::<f64>();
+        let lose_indices = (0..black_started_win_probabilities.len()).filter(|i| !win_indices.iter().any(|&(wi, _)| wi == *i)).collect::<Vec<_>>();
+        let lose_prob_product = lose_indices.iter().map(|&i| 1.0 - (black_started_win_probabilities[i] / 100.0)).product::<f64>();
+        win_prob_product * lose_prob_product
+    }).sum::<f64>();
+
+    let white_started_one_win_four_lose_probability = white_started_win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
+        let win_prob = win_prob / 100.0;
+        let lose_prob_product = white_started_win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_lose_prob)| 1.0 - (other_lose_prob / 100.0)).product::<f64>();
+        win_prob * lose_prob_product
+    }).sum::<f64>();
+    let black_started_one_win_four_lose_probability = black_started_win_probabilities.iter().enumerate().map(|(i, &win_prob)| {
+        let win_prob = win_prob / 100.0;
+        let lose_prob_product = black_started_win_probabilities.iter().enumerate().filter(|&(j, _)| i != j).map(|(_, &other_lose_prob)| 1.0 - (other_lose_prob / 100.0)).product::<f64>();
+        win_prob * lose_prob_product
+    }).sum::<f64>();
+
+    let white_started_all_lose_probability = white_started_win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
+    let black_started_all_lose_probability = black_started_win_probabilities.iter().map(|&win_prob| 1.0 - (win_prob / 100.0)).product::<f64>();
+
+    let white_started_total_win_probability = white_started_all_win_probability + white_started_four_win_one_lose_probability + white_started_three_win_two_lose_probability;
+    let black_started_total_win_probability = black_started_all_win_probability + black_started_four_win_one_lose_probability + black_started_three_win_two_lose_probability;
+
+    (
+        white_started_total_win_probability,
+        black_started_total_win_probability
+    )
+}
+
+pub fn get_team1_rax_result_post(match_result: &PostMatchResult, win1: f64, win2: f64, win3:f64, win4:f64, win5:f64) -> PostRAXResult {
+    let mut match_result_for_first_rapid_wpa = match_result.clone();
+    match_result_for_first_rapid_wpa.set_first_rapid_white_win_probability(100.0);
+    match_result_for_first_rapid_wpa.set_first_rapid_black_win_probability(100.0);
+    let mut match_result_for_second_blitz_wpa = match_result.clone();
+    match_result_for_second_blitz_wpa.set_second_blitz_black_win_probability(100.0);
+    match_result_for_second_blitz_wpa.set_second_blitz_white_win_probability(100.0);
+    let mut match_result_for_third_blitz_wpa = match_result.clone();
+    match_result_for_third_blitz_wpa.set_third_blitz_white_win_probability(100.0);
+    match_result_for_third_blitz_wpa.set_third_blitz_black_win_probability(100.0);
+    let mut match_result_for_forth_blitz_wpa = match_result.clone();
+    match_result_for_forth_blitz_wpa.set_forth_blitz_black_win_probability(100.0);
+    match_result_for_forth_blitz_wpa.set_forth_blitz_white_win_probability(100.0);
+    let mut match_result_for_fifth_bullet_wpa = match_result.clone();
+    match_result_for_fifth_bullet_wpa.set_fifth_bullet_white_win_probability(100.0);
+    match_result_for_fifth_bullet_wpa.set_fifth_bullet_black_win_probability(100.0);
+
+    let (white_win_prob, black_win_prob) = get_total_win_probability_post(match_result.clone());
+    let (
+        first_rapid_white_wpa,
+        first_rapid_black_wpa,
+        second_blitz_black_wpa,
+        second_blitz_white_wpa,
+        third_blitz_white_wpa,
+        third_blitz_black_wpa,
+        forth_blitz_black_wpa,
+        forth_blitz_white_wpa,
+        fifth_bullet_white_wpa,
+        fifth_bullet_black_wpa
+    ) = (|| {
+        let (first_rapid_white_win_prob, first_rapid_black_win_prob) = get_total_win_probability_post(match_result_for_first_rapid_wpa);
+        let (second_blitz_black_win_prob, second_blitz_white_win_prob) = get_total_win_probability_post(match_result_for_second_blitz_wpa);
+        let (third_blitz_white_win_prob, third_blitz_black_win_prob) = get_total_win_probability_post(match_result_for_third_blitz_wpa);
+        let (forth_blitz_black_win_prob, forth_blitz_white_win_prob) = get_total_win_probability_post(match_result_for_forth_blitz_wpa);
+        let (fifth_bullet_white_win_prob, fifth_bullet_black_win_prob) = get_total_win_probability_post(match_result_for_fifth_bullet_wpa);
+
+        (
+            first_rapid_white_win_prob - white_win_prob,
+            first_rapid_black_win_prob - black_win_prob,
+            second_blitz_black_win_prob - white_win_prob,
+            second_blitz_white_win_prob - black_win_prob,
+            third_blitz_white_win_prob - white_win_prob,
+            third_blitz_black_win_prob - black_win_prob,
+            forth_blitz_black_win_prob - white_win_prob,
+            forth_blitz_white_win_prob - black_win_prob,
+            fifth_bullet_white_win_prob - white_win_prob,
+            fifth_bullet_black_win_prob - black_win_prob
+        )
+    })();
+
+    let (first_rapid_white_rax, second_blitz_black_rax, third_blitz_white_rax, forth_blitz_black_rax, fifth_bullet_white_rax) = wpa_to_rax_post(first_rapid_white_wpa * win1, second_blitz_black_wpa * win2, third_blitz_white_wpa * win3, forth_blitz_black_wpa * win4, fifth_bullet_white_wpa * win5, win1 + win2 + win3 + win4 + win5);
+    let (first_rapid_black_rax, second_blitz_white_rax, third_blitz_black_rax, forth_blitz_white_rax, fifth_bullet_black_rax) = wpa_to_rax_post(first_rapid_black_wpa * win1, second_blitz_white_wpa * win2, third_blitz_black_wpa * win3, forth_blitz_white_wpa * win4, fifth_bullet_black_wpa * win5, win1 + win2 + win3 + win4 + win5);
+
+    PostRAXResult::new(
+        first_rapid_white_rax,
+        first_rapid_black_rax,
+        second_blitz_black_rax,
+        second_blitz_white_rax,
+        third_blitz_white_rax,
+        third_blitz_black_rax,
+        forth_blitz_black_rax,
+        forth_blitz_white_rax,
+        fifth_bullet_white_rax,
+        fifth_bullet_black_rax
+    )
+}
+
+pub fn get_team2_rax_result_post(match_result: &PostMatchResult, win1: f64, win2: f64, win3:f64, win4:f64, win5:f64) -> PostRAXResult {
+    let mut match_result_for_first_rapid_wpa = match_result.clone();
+    match_result_for_first_rapid_wpa.set_first_rapid_white_win_probability(0.0);
+    match_result_for_first_rapid_wpa.set_first_rapid_black_win_probability(0.0);
+    let mut match_result_for_second_blitz_wpa = match_result.clone();
+    match_result_for_second_blitz_wpa.set_second_blitz_black_win_probability(0.0);
+    match_result_for_second_blitz_wpa.set_second_blitz_white_win_probability(0.0);
+    let mut match_result_for_third_blitz_wpa = match_result.clone();
+    match_result_for_third_blitz_wpa.set_third_blitz_white_win_probability(0.0);
+    match_result_for_third_blitz_wpa.set_third_blitz_black_win_probability(0.0);
+    let mut match_result_for_forth_blitz_wpa = match_result.clone();
+    match_result_for_forth_blitz_wpa.set_forth_blitz_black_win_probability(0.0);
+    match_result_for_forth_blitz_wpa.set_forth_blitz_white_win_probability(0.0);
+    let mut match_result_for_fifth_bullet_wpa = match_result.clone();
+    match_result_for_fifth_bullet_wpa.set_fifth_bullet_white_win_probability(0.0);
+    match_result_for_fifth_bullet_wpa.set_fifth_bullet_black_win_probability(0.0);
+
+    let (white_win_prob, black_win_prob) = get_total_win_probability_post(match_result.clone());
+    let (
+        first_rapid_black_wpa,
+        first_rapid_white_wpa,
+        second_blitz_white_wpa,
+        second_blitz_black_wpa,
+        third_blitz_black_wpa,
+        third_blitz_white_wpa,
+        forth_blitz_white_wpa,
+        forth_blitz_black_wpa,
+        fifth_bullet_black_wpa,
+        fifth_bullet_white_wpa
+    ) = (|| {
+        let (first_rapid_white_win_prob, first_rapid_black_win_prob) = get_total_win_probability_post(match_result_for_first_rapid_wpa);
+        let (second_blitz_black_win_prob, second_blitz_white_win_prob) = get_total_win_probability_post(match_result_for_second_blitz_wpa);
+        let (third_blitz_white_win_prob, third_blitz_black_win_prob) = get_total_win_probability_post(match_result_for_third_blitz_wpa);
+        let (forth_blitz_black_win_prob, forth_blitz_white_win_prob) = get_total_win_probability_post(match_result_for_forth_blitz_wpa);
+        let (fifth_bullet_white_win_prob, fifth_bullet_black_win_prob) = get_total_win_probability_post(match_result_for_fifth_bullet_wpa);
+
+        (
+            white_win_prob - first_rapid_white_win_prob,
+            black_win_prob - first_rapid_black_win_prob,
+            white_win_prob - second_blitz_black_win_prob,
+            black_win_prob - second_blitz_white_win_prob,
+            white_win_prob - third_blitz_white_win_prob,
+            black_win_prob - third_blitz_black_win_prob,
+            white_win_prob - forth_blitz_black_win_prob,
+            black_win_prob - forth_blitz_white_win_prob,
+            white_win_prob - fifth_bullet_white_win_prob,
+            black_win_prob - fifth_bullet_black_win_prob
+        )
+    })();
+
+    let (first_rapid_white_rax, second_blitz_black_rax, third_blitz_white_rax, forth_blitz_black_rax, fifth_bullet_white_rax) = wpa_to_rax_post(first_rapid_white_wpa * win1, second_blitz_black_wpa * win2, third_blitz_white_wpa * win3, forth_blitz_black_wpa * win4, fifth_bullet_white_wpa * win5, win1 + win2 + win3 + win4 + win5);
+    let (first_rapid_black_rax, second_blitz_white_rax, third_blitz_black_rax, forth_blitz_white_rax, fifth_bullet_black_rax) = wpa_to_rax_post(first_rapid_black_wpa * win1, second_blitz_white_wpa * win2, third_blitz_black_wpa * win3, forth_blitz_white_wpa * win4, fifth_bullet_black_wpa * win5, win1 + win2 + win3 + win4 + win5);
+
+    PostRAXResult::new(
+        first_rapid_white_rax,
+        first_rapid_black_rax,
+        second_blitz_black_rax,
+        second_blitz_white_rax,
+        third_blitz_white_rax,
+        third_blitz_black_rax,
+        forth_blitz_black_rax,
+        forth_blitz_white_rax,
+        fifth_bullet_white_rax,
+        fifth_bullet_black_rax
+    )
+}
+
+pub fn wpa_to_rax_post(first_wpa: f64, second_wpa: f64, third_wpa: f64, forth_wpa: f64, fifth_wpa: f64, full_score: f64) -> (f64, f64, f64, f64, f64) {
+    let positive_values = [
+        first_wpa.max(0.0),
+        second_wpa.max(0.0),
+        third_wpa.max(0.0),
+        forth_wpa.max(0.0),
+        fifth_wpa.max(0.0)
+    ];
+    let sum_positive_values = positive_values.iter().sum::<f64>();
+    let scale_factor = if sum_positive_values == 0.0 { 0.0 } else { full_score / sum_positive_values };
+
+    (
+        positive_values[0] * scale_factor,
+        positive_values[1] * scale_factor,
+        positive_values[2] * scale_factor,
+        positive_values[3] * scale_factor,
+        positive_values[4] * scale_factor
+    )
 }
